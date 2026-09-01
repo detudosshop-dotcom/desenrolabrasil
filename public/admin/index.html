@@ -349,7 +349,6 @@
         function LoginView({ onLoginSuccess, darkMode, setDarkMode }) {
             const [username, setUsername] = useState('libera-br');
             const [password, setPassword] = useState('Bets2026');
-            const [showPass, setShowPass] = useState(false);
             const [loading, setLoading] = useState(false);
             const [errorMsg, setErrorMsg] = useState('');
 
@@ -456,7 +455,7 @@
             );
         }
 
-        // --- 2. PORTAL VIEW (MATCHING SCREENSHOT 5) ---
+        // --- 2. PORTAL VIEW ---
         function PortalView() {
             const [config, setConfig] = useState(null);
             const [selectedGwKey, setSelectedGwKey] = useState('freepay');
@@ -555,10 +554,9 @@
 
             const isSwitch = selectedGwKey !== config.activeGatewayKey;
 
-            // Gateway icon styling matching image 5
             const gwColors = {
-                freepay: { bg: 'bg-[#132238]', text: 'F', name: 'Pagamento gratuito (FreePay)' },
-                blackcat: { bg: 'bg-[#0091ea]', text: 'B', name: 'GatoPreto (BlackCat)' },
+                freepay: { bg: 'bg-[#132238]', text: 'F', name: 'Pagamento gratuito' },
+                blackcat: { bg: 'bg-[#0091ea]', text: 'B', name: 'GatoPreto' },
                 flevopay: { bg: 'bg-[#9c27b0]', text: 'F', name: 'FlevoPay' },
                 duttyfy: { bg: 'bg-[#ff9800]', text: 'D', name: 'Duttyfy' },
                 pingupag: { bg: 'bg-[#e91e63]', text: 'P', name: 'PinguPag' }
@@ -582,7 +580,7 @@
                     )}
 
                     <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
-                        {/* LEFT COLUMN: PORTAL ATIVO (7 COLS) */}
+                        {/* LEFT COLUMN */}
                         <div className="lg:col-span-7 bg-white dark:bg-[#152132] rounded-[16px] border border-[#e2e9f0] dark:border-[#1e2d42] p-6 shadow-sm space-y-5">
                             <div className="flex items-center justify-between pb-3 border-b border-[#e2e9f0] dark:border-[#1e2d42]">
                                 <div>
@@ -592,7 +590,6 @@
                                 <Icon name="sliders" className="w-4 h-4 text-[#00a86b]" />
                             </div>
 
-                            {/* LIST */}
                             <div className="space-y-2.5">
                                 {config.gateways.map(gw => {
                                     const isSelected = selectedGwKey === gw.key;
@@ -610,14 +607,12 @@
                                             } ${!gw.hasAdapter ? 'opacity-80' : ''}`}
                                         >
                                             <div className="flex items-center gap-3">
-                                                {/* Radio indicator */}
                                                 <div className={`w-4 h-4 rounded-full border-2 flex items-center justify-center ${
                                                     isSelected ? 'border-[#00a86b] bg-[#00a86b]' : 'border-[#cbd5e1] dark:border-[#334155]'
                                                 }`}>
                                                     {isSelected && <div className="w-1.5 h-1.5 rounded-full bg-white"></div>}
                                                 </div>
 
-                                                {/* Square initial icon */}
                                                 <div className={`w-8 h-8 rounded-lg ${styleInfo.bg} text-white flex items-center justify-center font-bold text-xs`}>
                                                     {styleInfo.text}
                                                 </div>
@@ -631,9 +626,7 @@
                                             <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${
                                                 isActive 
                                                     ? 'bg-[#e6f7f0] dark:bg-[#00a86b]/20 text-[#00a86b]' 
-                                                    : gw.hasAdapter 
-                                                        ? 'text-[#718197]' 
-                                                        : 'text-[#718197]'
+                                                    : 'text-[#718197]'
                                             }`}>
                                                 {isActive ? 'Ativa' : (gw.hasAdapter ? 'Configurado' : 'Aguardando')}
                                             </span>
@@ -642,7 +635,6 @@
                                 })}
                             </div>
 
-                            {/* NOTICE BANNER */}
                             <div className="p-3.5 rounded-xl bg-[#f0f7ff] dark:bg-[#0f1d2e] border border-[#d0e5ff] dark:border-[#19324d] flex items-start gap-3">
                                 <Icon name="shield-check" className="w-4 h-4 text-[#0091ea] flex-shrink-0 mt-0.5" />
                                 <p className="text-[11px] text-[#132238] dark:text-[#cbd5e1] leading-relaxed">
@@ -651,7 +643,7 @@
                             </div>
                         </div>
 
-                        {/* RIGHT COLUMN: CREDENCIAIS (5 COLS) */}
+                        {/* RIGHT COLUMN */}
                         <div className="lg:col-span-5 bg-white dark:bg-[#152132] rounded-[16px] border border-[#e2e9f0] dark:border-[#1e2d42] p-6 shadow-sm space-y-5 flex flex-col justify-between">
                             <div className="space-y-4">
                                 <div className="flex items-center justify-between pb-3 border-b border-[#e2e9f0] dark:border-[#1e2d42]">
@@ -735,7 +727,7 @@
             );
         }
 
-        // --- 3. OFFERS VIEW (MATCHING SCREENSHOT 4) ---
+        // --- 3. OFFERS VIEW ---
         function OffersView() {
             const [offers, setOffers] = useState([]);
             const [selectedOfferId, setSelectedOfferId] = useState(null);
@@ -828,14 +820,12 @@
                         </button>
                     </div>
 
-                    {/* NOTICE BANNER */}
                     <div className="p-3.5 rounded-xl bg-[#f0f7ff] dark:bg-[#0f1d2e] border border-[#d0e5ff] dark:border-[#19324d] flex items-center gap-2.5 text-xs text-[#132238] dark:text-[#cbd5e1]">
                         <Icon name="shield-check" className="w-4 h-4 text-[#0091ea] flex-shrink-0" />
                         <span><strong>Fallback UTMify configurado.</strong> Os pedidos sem uma oferta selecionada continuarão usando o token geral do ambiente até você definir uma oferta ativa.</span>
                     </div>
 
                     <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
-                        {/* LEFT: OFERTAS CADASTRADAS (5 COLS) */}
                         <div className="lg:col-span-5 bg-white dark:bg-[#152132] rounded-[16px] border border-[#e2e9f0] dark:border-[#1e2d42] p-6 shadow-sm space-y-4">
                             <div className="flex items-center justify-between pb-3 border-b border-[#e2e9f0] dark:border-[#1e2d42]">
                                 <div>
@@ -878,7 +868,6 @@
                             </div>
                         </div>
 
-                        {/* RIGHT: EDITOR (7 COLS) */}
                         <div className="lg:col-span-7 bg-white dark:bg-[#152132] rounded-[16px] border border-[#e2e9f0] dark:border-[#1e2d42] p-6 shadow-sm space-y-4">
                             <div className="flex items-center justify-between pb-3 border-b border-[#e2e9f0] dark:border-[#1e2d42]">
                                 <div>
@@ -940,7 +929,6 @@
                                     </div>
                                 </label>
 
-                                {/* PIXELS LIST */}
                                 <div className="pt-3 border-t border-[#e2e9f0] dark:border-[#1e2d42] space-y-2.5">
                                     <div className="flex items-center justify-between">
                                         <div>
@@ -1020,7 +1008,7 @@
             );
         }
 
-        // --- 4. ORDERS VIEW (MATCHING SCREENSHOT 3) ---
+        // --- 4. ORDERS VIEW ---
         function OrdersView() {
             const [orders, setOrders] = useState([]);
             const [metrics, setMetrics] = useState(null);
@@ -1060,7 +1048,7 @@
                         </button>
                     </div>
 
-                    {/* TOP 4 METRIC CARDS MATCHING IMAGE 3 */}
+                    {/* TOP 4 METRIC CARDS */}
                     <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
                         <div className="p-4 rounded-[14px] bg-white dark:bg-[#152132] border border-[#e2e9f0] dark:border-[#1e2d42] flex items-center justify-between shadow-xs">
                             <div>
@@ -1179,7 +1167,7 @@
             );
         }
 
-        // --- 5. RETENTION VIEW (MATCHING SCREENSHOT 1 & 2) ---
+        // --- 5. RETENTION VIEW ---
         function RetentionView() {
             const [metrics, setMetrics] = useState(null);
             const [loading, setLoading] = useState(true);
@@ -1201,9 +1189,16 @@
             }
 
             const rData = metrics.retention;
-            const f1 = rData.funnel[0] || { sessions: 4, rate: '100%' };
-            const f2 = rData.funnel[1] || { sessions: 1, rate: '25%' };
-            const f3 = rData.funnel[2] || { sessions: 1, rate: '25%' };
+            const f1 = rData.funnel[0] || { sessions: 0, rate: '100%' };
+            const f2 = rData.funnel[1] || { sessions: 0, rate: '0%' };
+            const f3 = rData.funnel[2] || { sessions: 0, rate: '0%' };
+
+            const overallPct = parseFloat(rData.overallPercentage) || 0;
+            const strokeDash = `${Math.min(100, Math.max(0, overallPct))}, 100`;
+
+            const widthF1 = f1.sessions > 0 ? '100%' : '0%';
+            const widthF2 = f1.sessions > 0 ? Math.min(100, (f2.sessions / f1.sessions) * 100) + '%' : '0%';
+            const widthF3 = f1.sessions > 0 ? Math.min(100, (f3.sessions / f1.sessions) * 100) + '%' : '0%';
 
             return (
                 <div className="space-y-6">
@@ -1211,7 +1206,7 @@
                         Retenção real entre Consulta, Identidade e Recebimento nos últimos 30 dias.
                     </p>
 
-                    {/* HERO BLUE DARK CARD MATCHING SCREENSHOT 1 & 2 */}
+                    {/* HERO BLUE DARK CARD */}
                     <div className="bg-[#1b3b5a] text-white rounded-[20px] p-6 sm:p-8 flex flex-col md:flex-row items-start md:items-center justify-between gap-6 shadow-md">
                         <div className="space-y-2">
                             <div className="w-9 h-9 rounded-xl bg-white/10 flex items-center justify-center">
@@ -1227,17 +1222,17 @@
                             <div className="relative w-20 h-20 flex items-center justify-center">
                                 <svg className="w-20 h-20 transform -rotate-90" viewBox="0 0 36 36">
                                     <path className="text-white/15" strokeWidth="3.5" stroke="currentColor" fill="none" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" />
-                                    <path className="text-[#00a86b]" strokeDasharray="25, 100" strokeWidth="3.5" strokeLinecap="round" stroke="currentColor" fill="none" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" />
+                                    <path className="text-[#00a86b]" strokeDasharray={strokeDash} strokeWidth="3.5" strokeLinecap="round" stroke="currentColor" fill="none" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" />
                                 </svg>
                                 <div className="absolute flex flex-col items-center justify-center text-center">
-                                    <span className="text-base font-black text-white leading-none">25%</span>
+                                    <span className="text-base font-black text-white leading-none">{overallPct}%</span>
                                     <span className="text-[8px] text-[#cbd5e1] mt-0.5 leading-none">À média de<br/>Recebimento</span>
                                 </div>
                             </div>
                         </div>
                     </div>
 
-                    {/* 3 FUNNEL CARDS MATCHING SCREENSHOT 1 & 2 */}
+                    {/* 3 FUNNEL CARDS */}
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                         {/* 01 Consulta */}
                         <div className="p-5 rounded-[16px] bg-white dark:bg-[#152132] border border-[#e2e9f0] dark:border-[#1e2d42] shadow-xs flex flex-col justify-between space-y-3">
@@ -1251,9 +1246,9 @@
                             </div>
                             <div className="space-y-1 pt-2">
                                 <div className="w-full h-1.5 bg-[#e2e9f0] dark:bg-[#223247] rounded-full overflow-hidden">
-                                    <div className="h-full bg-[#00a86b] rounded-full w-full"></div>
+                                    <div className="h-full bg-[#00a86b] rounded-full" style={{ width: widthF1 }}></div>
                                 </div>
-                                <span className="text-[10px] text-[#718197] block">100% base</span>
+                                <span className="text-[10px] text-[#718197] block">{f1.sessions > 0 ? '100% base' : '0% base'}</span>
                             </div>
                         </div>
 
@@ -1269,9 +1264,13 @@
                             </div>
                             <div className="space-y-1 pt-2">
                                 <div className="w-full h-1.5 bg-[#e2e9f0] dark:bg-[#223247] rounded-full overflow-hidden">
-                                    <div className="h-full bg-amber-400 rounded-full w-1/4"></div>
+                                    <div className="h-full bg-amber-400 rounded-full" style={{ width: widthF2 }}></div>
                                 </div>
-                                <span className="text-[10px] text-[#718197] block">25% retidos desde a Consulta · 25% da etapa anterior</span>
+                                <span className="text-[10px] text-[#718197] block">
+                                    {f1.sessions > 0 
+                                        ? `${((f2.sessions/f1.sessions)*100).toFixed(0)}% retidos desde a Consulta` 
+                                        : '0% retidos'}
+                                </span>
                             </div>
                         </div>
 
@@ -1287,9 +1286,13 @@
                             </div>
                             <div className="space-y-1 pt-2">
                                 <div className="w-full h-1.5 bg-[#e2e9f0] dark:bg-[#223247] rounded-full overflow-hidden">
-                                    <div className="h-full bg-[#0091ea] rounded-full w-1/4"></div>
+                                    <div className="h-full bg-[#0091ea] rounded-full" style={{ width: widthF3 }}></div>
                                 </div>
-                                <span className="text-[10px] text-[#718197] block">25% retidos desde a Consulta · 100% da etapa anterior</span>
+                                <span className="text-[10px] text-[#718197] block">
+                                    {f1.sessions > 0 
+                                        ? `${((f3.sessions/f1.sessions)*100).toFixed(0)}% retidos desde a Consulta` 
+                                        : '0% retidos'}
+                                </span>
                             </div>
                         </div>
                     </div>
@@ -1303,7 +1306,7 @@
                         </div>
                     </div>
 
-                    {/* CONVERSÃO EM ÂMBAR SECTION MATCHING IMAGE 2 */}
+                    {/* CONVERSÃO EM ÂMBAR SECTION */}
                     <div className="p-6 rounded-[16px] bg-white dark:bg-[#152132] border border-[#e2e9f0] dark:border-[#1e2d42] shadow-xs space-y-4">
                         <div className="flex items-center justify-between pb-3 border-b border-[#e2e9f0] dark:border-[#1e2d42]">
                             <div>
