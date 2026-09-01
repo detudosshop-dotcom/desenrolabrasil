@@ -487,6 +487,8 @@
                 }
             }, [selectedGwKey]);
 
+            const requiresPublicKey = currentGw ? (currentGw.requiresPublicKey === true || currentGw.key === 'freepay') : false;
+
             const handleSaveOrTest = async () => {
                 if (testing) return;
                 setTesting(true);
@@ -573,6 +575,7 @@
                                 {config.gateways.map(gw => {
                                     const isSelected = selectedGwKey === gw.key;
                                     const isActiveInProd = config.activeGatewayKey === gw.key;
+                                    const needsPub = gw.requiresPublicKey === true || gw.key === 'freepay';
 
                                     return (
                                         <div
@@ -602,8 +605,10 @@
                                                 </span>
                                             </div>
                                             <div className="text-[11px] text-[#718197] dark:text-[#94a3b8] space-y-0.5">
-                                                <div>Chave pública: <span className="font-mono">{gw.publicKeyMasked || 'Não configurada'}</span></div>
                                                 <div>Chave secreta: <span className="font-mono">{gw.secretKeyMasked || 'Não configurada'}</span></div>
+                                                {needsPub && (
+                                                    <div>Chave pública: <span className="font-mono">{gw.publicKeyMasked || 'Não configurada'}</span></div>
+                                                )}
                                             </div>
                                         </div>
                                     );
@@ -617,36 +622,47 @@
                                 <span className="text-[10px] font-bold text-[#00a86b] uppercase tracking-wider">CREDENCIAS DA ADQUIRENTE</span>
                                 <h3 className="text-lg font-bold text-[#132238] dark:text-white mt-0.5">Configurar {currentGw?.name}</h3>
                                 <p className="text-xs text-[#718197] dark:text-[#94a3b8] mt-0.5">
-                                    Informe a chave de API fornecida no painel da {currentGw?.name}.
+                                    {selectedGwKey === 'pingupag'
+                                        ? 'A Pingupag requer apenas a Chave Secreta (X-API-Key) para autenticação das requisições PIX. Não é necessária chave pública.'
+                                        : 'Informe as credenciais fornecidas no painel da ' + (currentGw ? currentGw.name : 'adquirente') + '.'}
                                 </p>
                             </div>
 
                             <div className="space-y-4">
                                 <div>
                                     <label className="block text-xs font-bold text-[#132238] dark:text-white uppercase mb-1">
-                                        Chave Secreta (Secret Key / API Key) *
+                                        {selectedGwKey === 'pingupag' 
+                                            ? 'Chave Secreta Pingupag (X-API-Key / Secret Key) *' 
+                                            : 'Chave Secreta (Secret Key / API Key) *'}
                                     </label>
                                     <input
                                         type="password"
                                         value={editSecret}
                                         onChange={(e) => setEditSecret(e.target.value)}
-                                        placeholder={currentGw?.secretKeyMasked || "Insira a chave secreta..."}
+                                        placeholder={currentGw?.secretKeyMasked || (selectedGwKey === 'pingupag' ? 'Ex: pingupag_live_... ou sua chave secreta' : 'Insira a chave secreta...')}
                                         className="w-full px-3.5 py-2.5 rounded-xl border border-[#e2e9f0] dark:border-[#223247] bg-white dark:bg-[#0b131f] text-sm text-[#132238] dark:text-white font-mono"
                                     />
+                                    {selectedGwKey === 'pingupag' && (
+                                        <p className="text-[11px] text-[#00a86b] font-medium mt-1">
+                                            ✓ Documentação oficial: Envie sua Chave Secreta copiada da aba "Configurações e API" da Pingupag.
+                                        </p>
+                                    )}
                                 </div>
 
-                                <div>
-                                    <label className="block text-xs font-bold text-[#132238] dark:text-white uppercase mb-1">
-                                        Chave Pública (Public Key)
-                                    </label>
-                                    <input
-                                        type="text"
-                                        value={editPublic}
-                                        onChange={(e) => setEditPublic(e.target.value)}
-                                        placeholder={currentGw?.publicKeyMasked || "Insira a chave pública (opcional para algumas APIs)..."}
-                                        className="w-full px-3.5 py-2.5 rounded-xl border border-[#e2e9f0] dark:border-[#223247] bg-white dark:bg-[#0b131f] text-sm text-[#132238] dark:text-white font-mono"
-                                    />
-                                </div>
+                                {requiresPublicKey && (
+                                    <div>
+                                        <label className="block text-xs font-bold text-[#132238] dark:text-white uppercase mb-1">
+                                            Chave Pública (Public Key)
+                                        </label>
+                                        <input
+                                            type="text"
+                                            value={editPublic}
+                                            onChange={(e) => setEditPublic(e.target.value)}
+                                            placeholder={currentGw?.publicKeyMasked || "Insira a chave pública..."}
+                                            className="w-full px-3.5 py-2.5 rounded-xl border border-[#e2e9f0] dark:border-[#223247] bg-white dark:bg-[#0b131f] text-sm text-[#132238] dark:text-white font-mono"
+                                        />
+                                    </div>
+                                )}
                             </div>
 
                             <div className="pt-2">
@@ -675,7 +691,7 @@
             );
         }
 
-        // --- 3. PIXELS VIEW ---
+                // --- 3. PIXELS VIEW ---
         function PixelsView() {
             const [pixels, setPixels] = useState({ utmify: [], facebook: [], tiktok: [] });
             const [loading, setLoading] = useState(true);
