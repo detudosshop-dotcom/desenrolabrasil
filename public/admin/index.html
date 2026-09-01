@@ -1,0 +1,1703 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>RecuperaBrasil · Central Administrativa</title>
+    <!-- Plus Jakarta Sans Font -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:ital,wght@0,300;0,400;0,500;0,600;0,700;0,800;1,400&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Plus Jakarta Sans', 'sans-serif'],
+                        mono: ['JetBrains Mono', 'monospace']
+                    },
+                    colors: {
+                        bgMain: '#f5f8fb',
+                        navyMain: '#132238',
+                        navySec: '#203653',
+                        textSec: '#718197',
+                        borderCol: '#e2e9f0',
+                        accentGreen: '#0ca678',
+                        greenSoft: '#e7f8f1',
+                        amberWarn: '#d58914',
+                        amberSoft: '#fdf6ea',
+                        redFail: '#bd5b59',
+                        redSoft: '#fbeeee',
+                        blueInfo: '#4c8bb4',
+                        blueSoft: '#eef5fa'
+                    },
+                    borderRadius: {
+                        'login': '25px',
+                        'card': '12px'
+                    },
+                    boxShadow: {
+                        'soft': '0 4px 20px -2px rgba(19, 34, 56, 0.05)',
+                        'card': '0 2px 12px 0 rgba(19, 34, 56, 0.04)',
+                        'drawer': '-8px 0 30px rgba(19, 34, 56, 0.12)'
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        * {
+            box-sizing: border-box;
+            -webkit-font-smoothing: antialiased;
+        }
+        body {
+            background-color: #f5f8fb;
+            color: #132238;
+            font-family: 'Plus Jakarta Sans', sans-serif;
+        }
+        .custom-scroll::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
+        }
+        .custom-scroll::-webkit-scrollbar-track {
+            background: #f1f5f9;
+        }
+        .custom-scroll::-webkit-scrollbar-thumb {
+            background: #cbd5e1;
+            border-radius: 4px;
+        }
+        .custom-scroll::-webkit-scrollbar-thumb:hover {
+            background: #94a3b8;
+        }
+        input:focus, select:focus, textarea:focus {
+            outline: none;
+            border-color: #0ca678;
+            box-shadow: 0 0 0 3px rgba(12, 166, 120, 0.15);
+        }
+        .animate-spin-fast {
+            animation: spin 0.8s linear infinite;
+        }
+        @keyframes spin {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+        }
+        [role="status"] {
+            transition: all 0.25s ease-in-out;
+        }
+    </style>
+</head>
+<body class="min-h-screen flex flex-col antialiased">
+    <div id="root"></div>
+
+    <!-- React 18 & Babel CDN for native reactivity -->
+    <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+
+    <script type="text/babel">
+        const { useState, useEffect, useMemo, useRef } = React;
+
+        // --- ICONS (Lucide Linear Equivalent SVGs) ---
+        const Icon = ({ name, className = "w-5 h-5", ...props }) => {
+            switch (name) {
+                case 'shield':
+                    return <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>;
+                case 'lock':
+                    return <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>;
+                case 'eye':
+                    return <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>;
+                case 'eye-off':
+                    return <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23"/></svg>;
+                case 'credit-card':
+                    return <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}><rect x="1" y="4" width="22" height="16" rx="2" ry="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg>;
+                case 'tag':
+                    return <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}><path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"/><line x1="7" y1="7" x2="7.01" y2="7"/></svg>;
+                case 'shopping-bag':
+                    return <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}><path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 0 1-8 0"/></svg>;
+                case 'bar-chart-2':
+                    return <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>;
+                case 'refresh-cw':
+                    return <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg>;
+                case 'log-out':
+                    return <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>;
+                case 'check-circle':
+                    return <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>;
+                case 'alert-circle':
+                    return <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>;
+                case 'check':
+                    return <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}><polyline points="20 6 9 17 4 12"/></svg>;
+                case 'menu':
+                    return <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="18" x2="21" y2="18"/></svg>;
+                case 'x':
+                    return <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>;
+                case 'plus':
+                    return <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>;
+                case 'trash-2':
+                    return <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><line x1="10" y1="11" x2="10" y2="17"/><line x1="14" y1="11" x2="14" y2="17"/></svg>;
+                case 'search':
+                    return <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>;
+                default:
+                    return null;
+            }
+        };
+
+        // --- MAIN APPLICATION COMPONENT ---
+        function App() {
+            const [sessionUser, setSessionUser] = useState(null);
+            const [authLoading, setAuthLoading] = useState(true);
+            const [activeTab, setActiveTab] = useState('gateway'); // 'gateway', 'offers', 'orders', 'retention'
+            const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
+
+            // Check session on load
+            useEffect(() => {
+                const token = localStorage.getItem('recupera_admin_token');
+                if (!token) {
+                    setAuthLoading(false);
+                    return;
+                }
+                fetch('/api/admin/auth/me', {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                })
+                .then(r => r.json())
+                .then(data => {
+                    if (data.success && data.user) {
+                        setSessionUser(data.user);
+                    } else {
+                        localStorage.removeItem('recupera_admin_token');
+                        setSessionUser(null);
+                    }
+                })
+                .catch(() => {
+                    setSessionUser(null);
+                })
+                .finally(() => {
+                    setAuthLoading(false);
+                });
+            }, []);
+
+            const handleLoginSuccess = (user, token) => {
+                localStorage.setItem('recupera_admin_token', token);
+                setSessionUser(user);
+            };
+
+            const handleLogout = () => {
+                const token = localStorage.getItem('recupera_admin_token');
+                fetch('/api/admin/auth/logout', {
+                    method: 'POST',
+                    headers: { 'Authorization': `Bearer ${token}` }
+                }).finally(() => {
+                    localStorage.removeItem('recupera_admin_token');
+                    setSessionUser(null);
+                });
+            };
+
+            if (authLoading) {
+                return (
+                    <div className="min-h-screen flex items-center justify-center bg-bgMain">
+                        <div className="flex flex-col items-center gap-3">
+                            <div className="w-10 h-10 border-4 border-accentGreen/20 border-t-accentGreen rounded-full animate-spin-fast"></div>
+                            <p className="text-sm font-semibold text-textSec">Carregando painel seguro...</p>
+                        </div>
+                    </div>
+                );
+            }
+
+            if (!sessionUser) {
+                return <LoginView onLoginSuccess={handleLoginSuccess} />;
+            }
+
+            return (
+                <div className="min-h-screen flex flex-col md:flex-row bg-bgMain">
+                    {/* SIDEBAR DESKTOP */}
+                    <aside className="hidden md:flex flex-col w-[252px] fixed inset-y-0 left-0 bg-white border-r border-borderCol z-30 shadow-card">
+                        <SidebarContent 
+                            activeTab={activeTab} 
+                            setActiveTab={setActiveTab} 
+                            onLogout={handleLogout} 
+                        />
+                    </aside>
+
+                    {/* MOBILE DRAWER SIDEBAR */}
+                    {mobileSidebarOpen && (
+                        <div className="fixed inset-0 z-50 flex md:hidden">
+                            <div className="fixed inset-0 bg-navyMain/50 backdrop-blur-sm" onClick={() => setMobileSidebarOpen(false)}></div>
+                            <div className="relative flex flex-col w-[270px] max-w-[85%] bg-white h-full shadow-2xl z-10">
+                                <div className="absolute top-4 right-4">
+                                    <button 
+                                        onClick={() => setMobileSidebarOpen(false)}
+                                        className="p-1.5 text-textSec hover:text-navyMain rounded-lg"
+                                        aria-label="Fechar menu"
+                                    >
+                                        <Icon name="x" className="w-5 h-5" />
+                                    </button>
+                                </div>
+                                <SidebarContent 
+                                    activeTab={activeTab} 
+                                    setActiveTab={(tab) => { setActiveTab(tab); setMobileSidebarOpen(false); }} 
+                                    onLogout={handleLogout} 
+                                />
+                            </div>
+                        </div>
+                    )}
+
+                    {/* MAIN CONTENT AREA */}
+                    <div className="flex-1 md:ml-[252px] flex flex-col min-h-screen">
+                        {/* TOPBAR */}
+                        <header className="h-[79px] bg-white border-b border-borderCol px-6 md:px-8 flex items-center justify-between sticky top-0 z-20 shadow-card">
+                            <div className="flex items-center gap-3">
+                                <button 
+                                    onClick={() => setMobileSidebarOpen(true)}
+                                    className="md:hidden p-2 rounded-lg text-textSec hover:text-navyMain hover:bg-bgMain focus:outline-none"
+                                    aria-label="Abrir navegação"
+                                >
+                                    <Icon name="menu" className="w-6 h-6" />
+                                </button>
+                                <div>
+                                    <h1 className="text-lg md:text-xl font-bold text-navyMain flex items-center gap-2">
+                                        {activeTab === 'gateway' && 'Gateways de Pagamento'}
+                                        {activeTab === 'offers' && 'Ofertas & Pixels'}
+                                        {activeTab === 'orders' && 'Pedidos da Operação'}
+                                        {activeTab === 'retention' && 'Métricas de Retenção'}
+                                    </h1>
+                                    <p className="text-xs text-textSec hidden sm:block">Central Administrativa · RecuperaBrasil</p>
+                                </div>
+                            </div>
+
+                            <div className="flex items-center gap-4">
+                                <div className="hidden sm:flex items-center gap-2 px-3 py-1.5 rounded-full bg-greenSoft text-accentGreen text-xs font-semibold border border-accentGreen/20">
+                                    <Icon name="shield" className="w-3.5 h-3.5" />
+                                    <span>Ambiente protegido</span>
+                                </div>
+                                <div className="flex items-center gap-3 pl-2 border-l border-borderCol">
+                                    <div className="w-9 h-9 rounded-full bg-navyMain text-white flex items-center justify-center font-bold text-sm shadow-sm" title={sessionUser.username}>
+                                        {sessionUser.username ? sessionUser.username.substring(0, 2).toUpperCase() : 'AD'}
+                                    </div>
+                                </div>
+                            </div>
+                        </header>
+
+                        {/* PAGE VIEW CONTAINER */}
+                        <main className="p-4 sm:p-6 md:p-8 flex-1 max-w-[1400px] w-full mx-auto">
+                            {activeTab === 'gateway' && <GatewayView />}
+                            {activeTab === 'offers' && <OffersView />}
+                            {activeTab === 'orders' && <OrdersView />}
+                            {activeTab === 'retention' && <RetentionView />}
+                        </main>
+                    </div>
+                </div>
+            );
+        }
+
+        // --- SIDEBAR CONTENT ---
+        function SidebarContent({ activeTab, setActiveTab, onLogout }) {
+            const navItems = [
+                { id: 'gateway', label: 'Gateway', icon: 'credit-card' },
+                { id: 'offers', label: 'Ofertas e pixels', icon: 'tag' },
+                { id: 'orders', label: 'Pedidos', icon: 'shopping-bag' },
+                { id: 'retention', label: 'Retenção', icon: 'bar-chart-2' }
+            ];
+
+            return (
+                <div className="flex flex-col h-full justify-between p-5">
+                    <div>
+                        {/* BRAND */}
+                        <div className="flex items-center gap-3 px-2 py-3 mb-6 border-b border-borderCol pb-5">
+                            <div className="w-10 h-10 rounded-xl bg-navyMain text-white flex items-center justify-center shadow-md font-extrabold text-lg">
+                                RB
+                            </div>
+                            <div>
+                                <span className="text-base font-extrabold text-navyMain tracking-tight block leading-tight">RecuperaBrasil</span>
+                                <span className="text-xs font-medium text-textSec">Central administrativa</span>
+                            </div>
+                        </div>
+
+                        {/* GROUP OPERAÇÃO */}
+                        <div className="mb-2 px-3">
+                            <span className="text-[11px] font-bold text-textSec uppercase tracking-wider">OPERAÇÃO</span>
+                        </div>
+
+                        {/* NAV ITEMS */}
+                        <nav className="space-y-1.5" aria-label="Navegação Principal">
+                            {navItems.map(item => {
+                                const isActive = activeTab === item.id;
+                                return (
+                                    <button
+                                        key={item.id}
+                                        onClick={() => setActiveTab(item.id)}
+                                        className={`w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-sm font-semibold transition-all ${
+                                            isActive
+                                                ? 'bg-greenSoft text-accentGreen shadow-sm font-bold'
+                                                : 'text-navySec hover:bg-bgMain hover:text-navyMain'
+                                        }`}
+                                    >
+                                        <Icon name={item.icon} className={`w-4.5 h-4.5 ${isActive ? 'text-accentGreen' : 'text-textSec'}`} />
+                                        <span>{item.label}</span>
+                                    </button>
+                                );
+                            })}
+                        </nav>
+                    </div>
+
+                    {/* SIDEBAR FOOTER */}
+                    <div className="pt-4 border-t border-borderCol space-y-3">
+                        <div className="flex items-center gap-2.5 px-3 py-2 rounded-lg bg-bgMain border border-borderCol">
+                            <span className="relative flex h-2.5 w-2.5">
+                                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-accentGreen opacity-75"></span>
+                                <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-accentGreen"></span>
+                            </span>
+                            <span className="text-xs font-semibold text-navyMain">Sistema operacional</span>
+                        </div>
+
+                        <button
+                            onClick={onLogout}
+                            className="w-full flex items-center justify-center gap-2 px-3 py-2 rounded-xl text-xs font-bold text-redFail hover:bg-redSoft transition-colors"
+                        >
+                            <Icon name="log-out" className="w-4 h-4" />
+                            <span>Sair do painel</span>
+                        </button>
+                    </div>
+                </div>
+            );
+        }
+
+        // --- 1. LOGIN VIEW ---
+        function LoginView({ onLoginSuccess }) {
+            const [username, setUsername] = useState('');
+            const [password, setPassword] = useState('');
+            const [showPassword, setShowPassword] = useState(false);
+            const [loading, setLoading] = useState(false);
+            const [errorMsg, setErrorMsg] = useState('');
+
+            const handleSubmit = async (e) => {
+                e.preventDefault();
+                setErrorMsg('');
+                if (!username.trim() || !password.trim()) {
+                    setErrorMsg('Por favor, preencha o usuário e a senha.');
+                    return;
+                }
+
+                setLoading(true);
+                try {
+                    const res = await fetch('/api/admin/auth/login', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ username, password })
+                    });
+                    const data = await res.json();
+                    if (data.success && data.token) {
+                        onLoginSuccess(data.user, data.token);
+                    } else {
+                        setErrorMsg(data.error || 'Credenciais inválidas. Tente novamente.');
+                    }
+                } catch (err) {
+                    setErrorMsg('Erro de conexão ao autenticar. Tente novamente.');
+                } finally {
+                    setLoading(false);
+                }
+            };
+
+            return (
+                <div className="min-h-screen bg-bgMain flex flex-col items-center justify-center p-4">
+                    <div className="w-full max-w-[460px] bg-white rounded-login p-8 sm:p-10 shadow-soft border border-borderCol flex flex-col">
+                        {/* BRAND HEADER */}
+                        <div className="flex flex-col items-center text-center mb-8">
+                            <div className="w-14 h-14 rounded-2xl bg-navyMain text-white flex items-center justify-center shadow-lg mb-4 text-2xl font-black">
+                                RB
+                            </div>
+                            <span className="text-[11px] font-bold uppercase tracking-widest text-accentGreen bg-greenSoft px-3 py-1 rounded-full mb-2 border border-accentGreen/20">
+                                ÁREA RESTRITA
+                            </span>
+                            <h2 className="text-2xl font-extrabold text-navyMain tracking-tight">Bem-vindo ao painel</h2>
+                            <p className="text-sm text-textSec mt-1.5 max-w-[320px]">
+                                Entre para acompanhar pagamentos, gateways e indicadores da operação.
+                            </p>
+                        </div>
+
+                        {/* FORM */}
+                        <form onSubmit={handleSubmit} className="space-y-4">
+                            <div>
+                                <label className="block text-xs font-bold text-navySec uppercase tracking-wider mb-1.5">
+                                    Usuário
+                                </label>
+                                <input
+                                    type="text"
+                                    value={username}
+                                    onChange={(e) => setUsername(e.target.value)}
+                                    placeholder="Ex: admin"
+                                    className="w-full px-4 py-3 rounded-xl border border-borderCol text-sm text-navyMain bg-white transition-all font-medium"
+                                    autoFocus
+                                />
+                            </div>
+
+                            <div>
+                                <label className="block text-xs font-bold text-navySec uppercase tracking-wider mb-1.5">
+                                    Senha
+                                </label>
+                                <div className="relative">
+                                    <input
+                                        type={showPassword ? 'text' : 'password'}
+                                        value={password}
+                                        onChange={(e) => setPassword(e.target.value)}
+                                        placeholder="••••••••••••"
+                                        className="w-full px-4 py-3 pr-12 rounded-xl border border-borderCol text-sm text-navyMain bg-white transition-all font-medium"
+                                    />
+                                    <button
+                                        type="button"
+                                        onClick={() => setShowPassword(!showPassword)}
+                                        className="absolute right-3.5 top-1/2 -translate-y-1/2 text-textSec hover:text-navyMain p-1"
+                                        aria-label={showPassword ? 'Ocultar senha' : 'Exibir senha'}
+                                    >
+                                        <Icon name={showPassword ? 'eye-off' : 'eye'} className="w-4.5 h-4.5" />
+                                    </button>
+                                </div>
+                            </div>
+
+                            {/* ERROR MESSAGE */}
+                            {errorMsg && (
+                                <div role="alert" className="p-3 rounded-xl bg-redSoft border border-redFail/20 flex items-center gap-2.5 text-xs font-semibold text-redFail">
+                                    <Icon name="alert-circle" className="w-4 h-4 flex-shrink-0" />
+                                    <span>{errorMsg}</span>
+                                </div>
+                            )}
+
+                            <button
+                                type="submit"
+                                disabled={loading}
+                                className="w-full mt-2 py-3.5 px-4 rounded-xl bg-accentGreen hover:bg-[#099268] text-white font-bold text-sm shadow-md transition-all flex items-center justify-center gap-2 disabled:opacity-70 disabled:cursor-not-allowed"
+                            >
+                                {loading ? (
+                                    <>
+                                        <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin-fast"></div>
+                                        <span>Autenticando sessão...</span>
+                                    </>
+                                ) : (
+                                    <>
+                                        <Icon name="lock" className="w-4 h-4" />
+                                        <span>Entrar com segurança</span>
+                                    </>
+                                )}
+                            </button>
+                        </form>
+
+                        {/* FOOTER */}
+                        <div className="mt-8 pt-6 border-t border-borderCol text-center space-y-1 text-xs text-textSec">
+                            <div className="flex items-center justify-center gap-1.5 font-semibold text-navySec">
+                                <Icon name="shield" className="w-3.5 h-3.5 text-accentGreen" />
+                                <span>Ambiente protegido</span>
+                            </div>
+                            <p className="text-[11px]">Sessão protegida e válida por 8 horas.</p>
+                        </div>
+                    </div>
+                </div>
+            );
+        }
+
+        // --- 2. GATEWAY VIEW ---
+        function GatewayView() {
+            const [config, setConfig] = useState(null);
+            const [selectedGwKey, setSelectedGwKey] = useState('freepay');
+            const [editPublicKey, setEditPublicKey] = useState('');
+            const [editSecretKey, setEditSecretKey] = useState('');
+            const [editMaxAmount, setEditMaxAmount] = useState('1000.00');
+            const [isTesting, setIsTesting] = useState(false);
+            const [testBanner, setTestBanner] = useState(null); // { type: 'success'|'error', title, message, txId, gatewayLabel }
+            const [saveMsg, setSaveMsg] = useState('');
+
+            const loadConfig = () => {
+                const token = localStorage.getItem('recupera_admin_token');
+                fetch('/api/admin/gateway-config', {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                })
+                .then(r => r.json())
+                .then(data => {
+                    if (data.success) {
+                        setConfig(data);
+                        if (!selectedGwKey || selectedGwKey === '') {
+                            setSelectedGwKey(data.activeGatewayKey);
+                        }
+                    }
+                });
+            };
+
+            useEffect(() => {
+                loadConfig();
+            }, []);
+
+            const activeGateway = useMemo(() => {
+                if (!config) return null;
+                return config.gateways.find(g => g.key === config.activeGatewayKey);
+            }, [config]);
+
+            const currentSelectedGateway = useMemo(() => {
+                if (!config) return null;
+                return config.gateways.find(g => g.key === selectedGwKey);
+            }, [config, selectedGwKey]);
+
+            // When selected gateway changes, reset input placeholders
+            useEffect(() => {
+                if (currentSelectedGateway) {
+                    setEditPublicKey('');
+                    setEditSecretKey('');
+                    setEditMaxAmount(((currentSelectedGateway.maxAmountCents || 100000) / 100).toFixed(2));
+                }
+            }, [selectedGwKey]);
+
+            const handleSaveOnly = async () => {
+                setSaveMsg('');
+                const token = localStorage.getItem('recupera_admin_token');
+                try {
+                    const res = await fetch('/api/admin/gateway-config', {
+                        method: 'PUT',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'Authorization': `Bearer ${token}`
+                        },
+                        body: JSON.stringify({
+                            gatewayKey: selectedGwKey,
+                            publicKey: editPublicKey,
+                            secretKey: editSecretKey,
+                            maxAmountCents: Math.round(parseFloat(editMaxAmount || 1000) * 100)
+                        })
+                    });
+                    const data = await res.json();
+                    if (data.success) {
+                        setSaveMsg('Configurações salvas com sucesso!');
+                        setTimeout(() => setSaveMsg(''), 4000);
+                        loadConfig();
+                    }
+                } catch (e) {
+                    setSaveMsg('Erro ao salvar.');
+                }
+            };
+
+            const handleTestAndActivate = async () => {
+                if (isTesting) return;
+                setIsTesting(true);
+                setTestBanner(null);
+                setSaveMsg('');
+
+                const token = localStorage.getItem('recupera_admin_token');
+                try {
+                    const res = await fetch('/api/admin/gateway-test', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'Authorization': `Bearer ${token}`
+                        },
+                        body: JSON.stringify({
+                            gatewayKey: selectedGwKey,
+                            publicKey: editPublicKey,
+                            secretKey: editSecretKey,
+                            maxAmountCents: Math.round(parseFloat(editMaxAmount || 1000) * 100)
+                        })
+                    });
+                    const data = await res.json();
+
+                    if (data.success && data.test) {
+                        setTestBanner({
+                            type: 'success',
+                            gatewayLabel: data.test.gatewayLabel || currentSelectedGateway?.name,
+                            message: data.test.message || 'PIX de teste de R$ 1,00 gerado com sucesso.',
+                            txId: data.test.transactionId,
+                            pixCodeMasked: data.test.pixCodeMasked
+                        });
+                        loadConfig();
+                    } else {
+                        setTestBanner({
+                            type: 'error',
+                            gatewayLabel: currentSelectedGateway?.name || 'Gateway',
+                            message: data.error || 'A chave da gateway é inválida ou não tem permissão para gerar cobranças.'
+                        });
+                    }
+                } catch (err) {
+                    setTestBanner({
+                        type: 'error',
+                        gatewayLabel: currentSelectedGateway?.name || 'Gateway',
+                        message: 'Erro de comunicação ao validar a gateway de pagamento.'
+                    });
+                } finally {
+                    setIsTesting(false);
+                }
+            };
+
+            if (!config) {
+                return (
+                    <div className="py-20 flex justify-center">
+                        <div className="w-8 h-8 border-4 border-accentGreen/20 border-t-accentGreen rounded-full animate-spin-fast"></div>
+                    </div>
+                );
+            }
+
+            const isSwitching = selectedGwKey !== config.activeGatewayKey;
+
+            return (
+                <div className="space-y-6">
+                    {/* HEADER */}
+                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-2">
+                        <div>
+                            <span className="text-[11px] font-extrabold uppercase tracking-widest text-textSec">CONFIGURAÇÃO</span>
+                            <h2 className="text-xl sm:text-2xl font-extrabold text-navyMain tracking-tight">Gateways de pagamento</h2>
+                            <p className="text-xs sm:text-sm text-textSec mt-0.5">Escolha o gateway ativo e mantenha as credenciais da operação protegidas.</p>
+                        </div>
+                        <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-greenSoft text-accentGreen text-xs font-bold border border-accentGreen/20 self-start sm:self-auto">
+                            <Icon name="shield" className="w-3.5 h-3.5" />
+                            <span>Dados protegidos</span>
+                        </div>
+                    </div>
+
+                    {/* TEST RESULT NOTIFICATION BANNER */}
+                    {testBanner && (
+                        <div 
+                            role="status"
+                            className={`p-4 sm:p-5 rounded-card border shadow-card transition-all ${
+                                testBanner.type === 'success'
+                                    ? 'bg-greenSoft border-accentGreen/30 text-navyMain'
+                                    : 'bg-redSoft border-redFail/30 text-navyMain'
+                            }`}
+                        >
+                            <div className="flex items-start gap-3">
+                                <div className={`p-2 rounded-xl flex-shrink-0 ${testBanner.type === 'success' ? 'bg-accentGreen text-white' : 'bg-redFail text-white'}`}>
+                                    <Icon name={testBanner.type === 'success' ? 'check-circle' : 'alert-circle'} className="w-5 h-5" />
+                                </div>
+                                <div className="space-y-1">
+                                    <div className="flex items-center gap-2">
+                                        <span className={`text-xs font-black uppercase tracking-wider ${testBanner.type === 'success' ? 'text-accentGreen' : 'text-redFail'}`}>
+                                            {testBanner.type === 'success' ? 'SUCESSO' : 'FALHA'} · {testBanner.gatewayLabel}
+                                        </span>
+                                    </div>
+                                    <p className="text-sm font-semibold">{testBanner.message}</p>
+                                    {testBanner.type === 'success' && (
+                                        <div className="pt-1 text-xs text-textSec font-mono">
+                                            <span>Gateway ativada na operação. ID da Transação: </span>
+                                            <strong className="text-navyMain">{testBanner.txId}</strong>
+                                        </div>
+                                    )}
+                                </div>
+                            </div>
+                        </div>
+                    )}
+
+                    {/* GATEWAYS CARDS LIST */}
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                        {config.gateways.map(gw => {
+                            const isSelected = selectedGwKey === gw.key;
+                            const isActive = config.activeGatewayKey === gw.key;
+
+                            return (
+                                <div
+                                    key={gw.key}
+                                    onClick={() => setSelectedGwKey(gw.key)}
+                                    className={`relative p-5 rounded-card border cursor-pointer transition-all bg-white shadow-card flex flex-col justify-between ${
+                                        isSelected 
+                                            ? 'border-accentGreen ring-2 ring-accentGreen/20 shadow-md' 
+                                            : 'border-borderCol hover:border-textSec/40'
+                                    } ${!gw.hasAdapter ? 'opacity-70 bg-slate-50/70' : ''}`}
+                                >
+                                    <div>
+                                        <div className="flex items-center justify-between mb-3">
+                                            <div className="flex items-center gap-3">
+                                                <div className={`w-10 h-10 rounded-xl flex items-center justify-center font-black text-base shadow-sm ${
+                                                    isActive 
+                                                        ? 'bg-accentGreen text-white' 
+                                                        : 'bg-navyMain text-white'
+                                                }`}>
+                                                    {gw.name.substring(0, 1)}
+                                                </div>
+                                                <div>
+                                                    <h3 className="text-sm font-bold text-navyMain">{gw.name}</h3>
+                                                    <span className={`text-[11px] font-bold px-2 py-0.5 rounded-full inline-block mt-0.5 ${
+                                                        isActive
+                                                            ? 'bg-greenSoft text-accentGreen border border-accentGreen/20'
+                                                            : gw.hasAdapter
+                                                                ? 'bg-slate-100 text-slate-600'
+                                                                : 'bg-amberSoft text-amberWarn border border-amberWarn/20'
+                                                    }`}>
+                                                        {isActive ? 'Ativo' : gw.state}
+                                                    </span>
+                                                </div>
+                                            </div>
+
+                                            {/* RADIO VISUAL */}
+                                            <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center ${
+                                                isSelected ? 'border-accentGreen bg-accentGreen' : 'border-borderCol'
+                                            }`}>
+                                                {isSelected && <div className="w-2 h-2 rounded-full bg-white"></div>}
+                                            </div>
+                                        </div>
+
+                                        <p className="text-xs text-textSec line-clamp-2">{gw.statusText}</p>
+                                    </div>
+
+                                    {!gw.hasAdapter && (
+                                        <div className="mt-3 pt-2 border-t border-dashed border-borderCol">
+                                            <span className="text-[10px] font-semibold text-amberWarn flex items-center gap-1">
+                                                <Icon name="alert-circle" className="w-3 h-3" />
+                                                Adaptador de cobrança pendente
+                                            </span>
+                                        </div>
+                                    )}
+                                </div>
+                            );
+                        })}
+                    </div>
+
+                    {/* CREDENTIALS EDITOR CARD */}
+                    {currentSelectedGateway && (
+                        <div className="bg-white rounded-card border border-borderCol p-6 sm:p-7 shadow-card space-y-6">
+                            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-4 border-b border-borderCol">
+                                <div>
+                                    <h3 className="text-base font-bold text-navyMain flex items-center gap-2">
+                                        <span>Credenciais · {currentSelectedGateway.name}</span>
+                                        {config.activeGatewayKey === currentSelectedGateway.key && (
+                                            <span className="text-[10px] font-extrabold px-2 py-0.5 bg-greenSoft text-accentGreen rounded-full uppercase">
+                                                Ativo na Operação
+                                            </span>
+                                        )}
+                                    </h3>
+                                    <p className="text-xs text-textSec mt-0.5">As chaves salvas permanecem protegidas e mascaradas.</p>
+                                </div>
+
+                                <div className="flex items-center gap-2">
+                                    <label className="text-xs font-semibold text-textSec">Gateway:</label>
+                                    <select
+                                        value={selectedGwKey}
+                                        onChange={(e) => setSelectedGwKey(e.target.value)}
+                                        className="text-xs font-bold px-3 py-1.5 rounded-lg border border-borderCol bg-white text-navyMain"
+                                    >
+                                        {config.gateways.map(g => (
+                                            <option key={g.key} value={g.key}>{g.name} {config.activeGatewayKey === g.key ? '(Ativo)' : ''}</option>
+                                        ))}
+                                    </select>
+                                </div>
+                            </div>
+
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+                                {/* PUBLIC KEY (IF APPLICABLE) */}
+                                <div>
+                                    <label className="block text-xs font-bold text-navySec uppercase tracking-wider mb-1.5">
+                                        Public Key {currentSelectedGateway.publicKeyMasked && <span className="text-textSec lowercase font-normal">(salvo: {currentSelectedGateway.publicKeyMasked})</span>}
+                                    </label>
+                                    <input
+                                        type="text"
+                                        value={editPublicKey}
+                                        onChange={(e) => setEditPublicKey(e.target.value)}
+                                        placeholder={currentSelectedGateway.hasPublicKey ? "••••••••••••••••••••••••••••••••" : "Insira a chave pública da gateway"}
+                                        className="w-full px-4 py-2.5 rounded-xl border border-borderCol text-xs sm:text-sm text-navyMain font-mono"
+                                    />
+                                    <span className="text-[11px] text-textSec mt-1 block">Deixe em branco para manter a chave atual salva.</span>
+                                </div>
+
+                                {/* SECRET KEY */}
+                                <div>
+                                    <label className="block text-xs font-bold text-navySec uppercase tracking-wider mb-1.5">
+                                        Secret Key {currentSelectedGateway.secretKeyMasked && <span className="text-textSec lowercase font-normal">(salvo: {currentSelectedGateway.secretKeyMasked})</span>}
+                                    </label>
+                                    <input
+                                        type="password"
+                                        value={editSecretKey}
+                                        onChange={(e) => setEditSecretKey(e.target.value)}
+                                        placeholder={currentSelectedGateway.hasSecretKey ? "••••••••••••••••••••••••••••••••" : "sk_live_..."}
+                                        className="w-full px-4 py-2.5 rounded-xl border border-borderCol text-xs sm:text-sm text-navyMain font-mono"
+                                    />
+                                    <span className="text-[11px] text-textSec mt-1 block">A chave secreta nunca é exibida desmascarada.</span>
+                                </div>
+
+                                {/* MAX AMOUNT */}
+                                <div>
+                                    <label className="block text-xs font-bold text-navySec uppercase tracking-wider mb-1.5">
+                                        Limite máximo por cobrança
+                                    </label>
+                                    <div className="relative">
+                                        <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-xs font-bold text-textSec">R$</span>
+                                        <input
+                                            type="number"
+                                            step="0.01"
+                                            value={editMaxAmount}
+                                            onChange={(e) => setEditMaxAmount(e.target.value)}
+                                            className="w-full pl-10 pr-4 py-2.5 rounded-xl border border-borderCol text-xs sm:text-sm text-navyMain font-bold"
+                                        />
+                                    </div>
+                                </div>
+                            </div>
+
+                            {saveMsg && (
+                                <div className="p-3 rounded-lg bg-greenSoft text-accentGreen text-xs font-bold flex items-center gap-2">
+                                    <Icon name="check" className="w-4 h-4" />
+                                    <span>{saveMsg}</span>
+                                </div>
+                            )}
+
+                            {/* ACTIONS */}
+                            <div className="pt-4 border-t border-borderCol flex flex-col sm:flex-row items-center justify-between gap-3">
+                                <div className="text-xs text-textSec">
+                                    {isSwitching ? (
+                                        <span className="font-semibold text-amberWarn flex items-center gap-1.5">
+                                            <Icon name="alert-circle" className="w-4 h-4" />
+                                            Troca de gateway exige validação de PIX real de R$ 1,00.
+                                        </span>
+                                    ) : (
+                                        <span>Gateway ativa atualmente na operação.</span>
+                                    )}
+                                </div>
+
+                                <div className="flex items-center gap-3 w-full sm:w-auto">
+                                    {!isSwitching && (
+                                        <button
+                                            type="button"
+                                            onClick={handleSaveOnly}
+                                            className="w-full sm:w-auto px-5 py-2.5 rounded-xl border border-borderCol bg-white hover:bg-bgMain text-navyMain font-bold text-xs shadow-sm transition-all"
+                                        >
+                                            Salvar credenciais
+                                        </button>
+                                    )}
+
+                                    <button
+                                        type="button"
+                                        onClick={handleTestAndActivate}
+                                        disabled={isTesting || (!currentSelectedGateway.hasAdapter && isSwitching)}
+                                        className={`w-full sm:w-auto px-6 py-2.5 rounded-xl font-bold text-xs text-white shadow-md transition-all flex items-center justify-center gap-2 ${
+                                            !currentSelectedGateway.hasAdapter && isSwitching
+                                                ? 'bg-slate-400 cursor-not-allowed'
+                                                : 'bg-accentGreen hover:bg-[#099268]'
+                                        } disabled:opacity-75`}
+                                    >
+                                        {isTesting ? (
+                                            <>
+                                                <div className="w-3.5 h-3.5 border-2 border-white/30 border-t-white rounded-full animate-spin-fast"></div>
+                                                <span>Gerando PIX de teste...</span>
+                                            </>
+                                        ) : (
+                                            <>
+                                                <Icon name="check-circle" className="w-4 h-4" />
+                                                <span>{isSwitching ? 'Testar PIX e ativar' : 'Testar conexão PIX'}</span>
+                                            </>
+                                        )}
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    )}
+                </div>
+            );
+        }
+
+        // --- 3. OFFERS & PIXELS VIEW ---
+        function OffersView() {
+            const [offers, setOffers] = useState([]);
+            const [selectedOfferId, setSelectedOfferId] = useState(null);
+            const [formData, setFormData] = useState({
+                id: null,
+                name: '',
+                slug: '',
+                utmifyToken: '',
+                active: true,
+                pixels: []
+            });
+            const [loading, setLoading] = useState(true);
+            const [saving, setSaving] = useState(false);
+            const [feedback, setFeedback] = useState(null);
+
+            const loadOffers = () => {
+                const token = localStorage.getItem('recupera_admin_token');
+                fetch('/api/admin/offers', {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                })
+                .then(r => r.json())
+                .then(data => {
+                    if (data.success) {
+                        setOffers(data.offers);
+                        if (!selectedOfferId && data.offers.length > 0) {
+                            selectOffer(data.offers[0]);
+                        }
+                    }
+                })
+                .finally(() => setLoading(false));
+            };
+
+            useEffect(() => {
+                loadOffers();
+            }, []);
+
+            const selectOffer = (offer) => {
+                setSelectedOfferId(offer.id);
+                setFormData({
+                    id: offer.id,
+                    name: offer.name,
+                    slug: offer.slug,
+                    utmifyToken: offer.utmifyTokenMasked || '',
+                    active: offer.active,
+                    pixels: offer.pixels || []
+                });
+                setFeedback(null);
+            };
+
+            const handleNewOffer = () => {
+                setSelectedOfferId('new');
+                setFormData({
+                    id: null,
+                    name: 'Nova Oferta de Campanha',
+                    slug: 'nova-oferta-' + Date.now().toString().slice(-4),
+                    utmifyToken: '',
+                    active: true,
+                    pixels: [
+                        { id: 'pix_' + Date.now(), platform: 'TikTok', pixelId: 'DA9IHQBC77UBPDTVJ18G', label: 'Pixel TikTok' }
+                    ]
+                });
+                setFeedback(null);
+            };
+
+            const handleAddPixel = () => {
+                setFormData(prev => ({
+                    ...prev,
+                    pixels: [
+                        ...prev.pixels,
+                        { id: 'pix_' + Date.now(), platform: 'TikTok', pixelId: '', label: '' }
+                    ]
+                }));
+            };
+
+            const handleRemovePixel = (index) => {
+                setFormData(prev => ({
+                    ...prev,
+                    pixels: prev.pixels.filter((_, i) => i !== index)
+                }));
+            };
+
+            const handlePixelChange = (index, field, value) => {
+                setFormData(prev => {
+                    const nextPixels = [...prev.pixels];
+                    nextPixels[index] = { ...nextPixels[index], [field]: value };
+                    return { ...prev, pixels: nextPixels };
+                });
+            };
+
+            const handleSaveOffer = async (e) => {
+                e.preventDefault();
+                setSaving(true);
+                setFeedback(null);
+
+                const token = localStorage.getItem('recupera_admin_token');
+                try {
+                    const res = await fetch('/api/admin/offers', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'Authorization': `Bearer ${token}`
+                        },
+                        body: JSON.stringify(formData)
+                    });
+                    const data = await res.json();
+                    if (data.success) {
+                        setFeedback({ type: 'success', message: data.message || 'Oferta salva com sucesso!' });
+                        loadOffers();
+                    } else {
+                        setFeedback({ type: 'error', message: data.error || 'Erro ao salvar oferta.' });
+                    }
+                } catch (err) {
+                    setFeedback({ type: 'error', message: 'Erro na conexão com o servidor.' });
+                } finally {
+                    setSaving(false);
+                }
+            };
+
+            const handleDeleteOffer = async () => {
+                if (!formData.id) return;
+                if (!confirm(`Deseja realmente excluir a oferta '${formData.name}'?`)) return;
+
+                const token = localStorage.getItem('recupera_admin_token');
+                try {
+                    const res = await fetch(`/api/admin/offers/${formData.id}`, {
+                        method: 'DELETE',
+                        headers: { 'Authorization': `Bearer ${token}` }
+                    });
+                    const data = await res.json();
+                    if (data.success) {
+                        setSelectedOfferId(null);
+                        loadOffers();
+                    } else {
+                        alert(data.error || 'Erro ao excluir oferta.');
+                    }
+                } catch (e) {
+                    alert('Erro ao excluir oferta.');
+                }
+            };
+
+            if (loading) {
+                return (
+                    <div className="py-20 flex justify-center">
+                        <div className="w-8 h-8 border-4 border-accentGreen/20 border-t-accentGreen rounded-full animate-spin-fast"></div>
+                    </div>
+                );
+            }
+
+            return (
+                <div className="space-y-6">
+                    {/* HEADER */}
+                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-2">
+                        <div>
+                            <span className="text-[11px] font-extrabold uppercase tracking-widest text-textSec">RASTREAMENTO POR CAMPANHA</span>
+                            <h2 className="text-xl sm:text-2xl font-extrabold text-navyMain tracking-tight">Ofertas e pixels</h2>
+                            <p className="text-xs sm:text-sm text-textSec mt-0.5">Associe um token UTMify e quantos pixels forem necessários a cada identificador público.</p>
+                        </div>
+                        <button
+                            type="button"
+                            onClick={handleNewOffer}
+                            className="px-4 py-2.5 rounded-xl bg-navyMain hover:bg-navySec text-white font-bold text-xs shadow-sm transition-all flex items-center gap-2 self-start sm:self-auto"
+                        >
+                            <Icon name="plus" className="w-4 h-4" />
+                            <span>Nova oferta</span>
+                        </button>
+                    </div>
+
+                    {/* MAIN TWO COLUMN LAYOUT */}
+                    <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+                        {/* LEFT LIST (4 COLS) */}
+                        <div className="lg:col-span-4 space-y-3">
+                            <h3 className="text-xs font-bold text-navySec uppercase tracking-wider px-1">Ofertas Cadastradas ({offers.length})</h3>
+                            <div className="space-y-2">
+                                {offers.map(off => {
+                                    const isSelected = selectedOfferId === off.id;
+                                    return (
+                                        <div
+                                            key={off.id}
+                                            onClick={() => selectOffer(off)}
+                                            className={`p-4 rounded-card border cursor-pointer transition-all bg-white shadow-card ${
+                                                isSelected 
+                                                    ? 'border-accentGreen ring-2 ring-accentGreen/20 shadow-md' 
+                                                    : 'border-borderCol hover:border-textSec/40'
+                                            }`}
+                                        >
+                                            <div className="flex items-center justify-between mb-1">
+                                                <h4 className="text-sm font-bold text-navyMain truncate">{off.name}</h4>
+                                                <span className={`text-[10px] font-extrabold px-2 py-0.5 rounded-full ${
+                                                    off.active 
+                                                        ? 'bg-greenSoft text-accentGreen' 
+                                                        : 'bg-slate-100 text-slate-500'
+                                                }`}>
+                                                    {off.active ? 'Ativa' : 'Inativa'}
+                                                </span>
+                                            </div>
+                                            <div className="flex items-center justify-between text-xs text-textSec">
+                                                <span className="font-mono text-[11px] text-navySec">/{off.slug}</span>
+                                                <span>{off.pixels?.length || 0} pixel(s)</span>
+                                            </div>
+                                        </div>
+                                    );
+                                })}
+
+                                {offers.length === 0 && (
+                                    <div className="p-6 text-center text-xs text-textSec bg-white rounded-card border border-borderCol">
+                                        Nenhuma oferta cadastrada.
+                                    </div>
+                                )}
+                            </div>
+                        </div>
+
+                        {/* RIGHT EDITOR (8 COLS) */}
+                        <div className="lg:col-span-8">
+                            <div className="bg-white rounded-card border border-borderCol p-6 sm:p-7 shadow-card">
+                                <form onSubmit={handleSaveOffer} className="space-y-5">
+                                    <div className="flex items-center justify-between pb-3 border-b border-borderCol">
+                                        <h3 className="text-base font-bold text-navyMain">
+                                            {formData.id ? 'Editar Oferta' : 'Criar Nova Oferta'}
+                                        </h3>
+                                        <label className="flex items-center gap-2 cursor-pointer">
+                                            <input
+                                                type="checkbox"
+                                                checked={formData.active}
+                                                onChange={(e) => setFormData({ ...formData, active: e.target.checked })}
+                                                className="w-4 h-4 rounded text-accentGreen focus:ring-accentGreen"
+                                            />
+                                            <span className="text-xs font-bold text-navyMain">Oferta ativa</span>
+                                        </label>
+                                    </div>
+
+                                    {feedback && (
+                                        <div role="status" className={`p-3 rounded-xl text-xs font-bold flex items-center gap-2 ${
+                                            feedback.type === 'success' ? 'bg-greenSoft text-accentGreen' : 'bg-redSoft text-redFail'
+                                        }`}>
+                                            <Icon name={feedback.type === 'success' ? 'check' : 'alert-circle'} className="w-4 h-4" />
+                                            <span>{feedback.message}</span>
+                                        </div>
+                                    )}
+
+                                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                        <div>
+                                            <label className="block text-xs font-bold text-navySec uppercase tracking-wider mb-1">
+                                                Nome da oferta
+                                            </label>
+                                            <input
+                                                type="text"
+                                                value={formData.name}
+                                                onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                                                required
+                                                className="w-full px-4 py-2.5 rounded-xl border border-borderCol text-sm text-navyMain font-semibold"
+                                            />
+                                        </div>
+
+                                        <div>
+                                            <label className="block text-xs font-bold text-navySec uppercase tracking-wider mb-1">
+                                                Slug público
+                                            </label>
+                                            <div className="relative">
+                                                <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-xs font-bold text-textSec">/</span>
+                                                <input
+                                                    type="text"
+                                                    value={formData.slug}
+                                                    onChange={(e) => setFormData({ ...formData, slug: e.target.value.toLowerCase().replace(/[^a-z0-9-_]/g, '') })}
+                                                    required
+                                                    className="w-full pl-7 pr-4 py-2.5 rounded-xl border border-borderCol text-sm text-navyMain font-mono font-semibold"
+                                                />
+                                            </div>
+                                        </div>
+
+                                        <div className="sm:col-span-2">
+                                            <label className="block text-xs font-bold text-navySec uppercase tracking-wider mb-1">
+                                                Token UTMify
+                                            </label>
+                                            <input
+                                                type="text"
+                                                value={formData.utmifyToken}
+                                                onChange={(e) => setFormData({ ...formData, utmifyToken: e.target.value })}
+                                                placeholder="utm_live_..."
+                                                className="w-full px-4 py-2.5 rounded-xl border border-borderCol text-sm text-navyMain font-mono"
+                                            />
+                                            <span className="text-[11px] text-textSec mt-1 block">Os tokens são mascarados e nunca expostos publicamente.</span>
+                                        </div>
+                                    </div>
+
+                                    {/* PIXELS LIST */}
+                                    <div className="pt-4 border-t border-borderCol space-y-3">
+                                        <div className="flex items-center justify-between">
+                                            <label className="text-xs font-bold text-navySec uppercase tracking-wider">
+                                                Pixels de Rastreamento ({formData.pixels.length})
+                                            </label>
+                                            <button
+                                                type="button"
+                                                onClick={handleAddPixel}
+                                                className="text-xs font-bold text-accentGreen hover:text-[#099268] flex items-center gap-1"
+                                            >
+                                                <Icon name="plus" className="w-3.5 h-3.5" />
+                                                <span>Adicionar pixel</span>
+                                            </button>
+                                        </div>
+
+                                        <div className="space-y-2.5">
+                                            {formData.pixels.map((pix, idx) => (
+                                                <div key={pix.id || idx} className="flex flex-col sm:flex-row items-center gap-2 p-3 bg-bgMain rounded-xl border border-borderCol">
+                                                    <select
+                                                        value={pix.platform}
+                                                        onChange={(e) => handlePixelChange(idx, 'platform', e.target.value)}
+                                                        className="w-full sm:w-[130px] text-xs font-bold px-3 py-2 rounded-lg border border-borderCol bg-white text-navyMain"
+                                                    >
+                                                        <option value="TikTok">TikTok</option>
+                                                        <option value="Meta">Meta (FB)</option>
+                                                        <option value="UTMify">UTMify</option>
+                                                    </select>
+
+                                                    <input
+                                                        type="text"
+                                                        value={pix.pixelId}
+                                                        onChange={(e) => handlePixelChange(idx, 'pixelId', e.target.value)}
+                                                        placeholder="ID do Pixel (ex: DA9IHQBC...)"
+                                                        required
+                                                        className="w-full sm:flex-1 text-xs font-mono px-3 py-2 rounded-lg border border-borderCol bg-white text-navyMain"
+                                                    />
+
+                                                    <input
+                                                        type="text"
+                                                        value={pix.label}
+                                                        onChange={(e) => handlePixelChange(idx, 'label', e.target.value)}
+                                                        placeholder="Nome / Label (opcional)"
+                                                        className="w-full sm:w-[160px] text-xs px-3 py-2 rounded-lg border border-borderCol bg-white text-navyMain"
+                                                    />
+
+                                                    <button
+                                                        type="button"
+                                                        onClick={() => handleRemovePixel(idx)}
+                                                        className="p-2 text-textSec hover:text-redFail rounded-lg self-end sm:self-center"
+                                                        aria-label="Remover pixel"
+                                                    >
+                                                        <Icon name="trash-2" className="w-4 h-4" />
+                                                    </button>
+                                                </div>
+                                            ))}
+
+                                            {formData.pixels.length === 0 && (
+                                                <div className="p-6 text-center text-xs text-textSec bg-bgMain rounded-xl border border-dashed border-borderCol">
+                                                    Nenhum pixel cadastrado para esta oferta.
+                                                </div>
+                                            )}
+                                        </div>
+                                    </div>
+
+                                    {/* BUTTONS */}
+                                    <div className="pt-4 border-t border-borderCol flex items-center justify-between gap-3">
+                                        {formData.id ? (
+                                            <button
+                                                type="button"
+                                                onClick={handleDeleteOffer}
+                                                className="px-4 py-2 rounded-xl text-xs font-bold text-redFail hover:bg-redSoft transition-colors flex items-center gap-1.5"
+                                            >
+                                                <Icon name="trash-2" className="w-3.5 h-3.5" />
+                                                <span>Excluir</span>
+                                            </button>
+                                        ) : <div></div>}
+
+                                        <button
+                                            type="submit"
+                                            disabled={saving}
+                                            className="px-6 py-2.5 rounded-xl bg-accentGreen hover:bg-[#099268] text-white font-bold text-xs shadow-md transition-all disabled:opacity-70 flex items-center gap-2"
+                                        >
+                                            {saving ? (
+                                                <>
+                                                    <div className="w-3.5 h-3.5 border-2 border-white/30 border-t-white rounded-full animate-spin-fast"></div>
+                                                    <span>Salvando...</span>
+                                                </>
+                                            ) : (
+                                                <>
+                                                    <Icon name="check" className="w-3.5 h-3.5" />
+                                                    <span>Salvar oferta</span>
+                                                </>
+                                            )}
+                                        </button>
+                                    </div>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            );
+        }
+
+        // --- 4. ORDERS VIEW ---
+        function OrdersView() {
+            const [orders, setOrders] = useState([]);
+            const [metrics, setMetrics] = useState(null);
+            const [loading, setLoading] = useState(true);
+            const [searchQuery, setSearchQuery] = useState('');
+            const [statusFilter, setStatusFilter] = useState('ALL');
+            const [selectedOrder, setSelectedOrder] = useState(null);
+            const [updatingStatus, setUpdatingStatus] = useState(false);
+
+            const loadOrdersAndMetrics = () => {
+                setLoading(true);
+                const token = localStorage.getItem('recupera_admin_token');
+                
+                Promise.all([
+                    fetch(`/api/admin/orders?status=${statusFilter}&search=${encodeURIComponent(searchQuery)}`, {
+                        headers: { 'Authorization': `Bearer ${token}` }
+                    }).then(r => r.json()),
+                    fetch('/api/admin/metrics', {
+                        headers: { 'Authorization': `Bearer ${token}` }
+                    }).then(r => r.json())
+                ])
+                .then(([ordersData, metricsData]) => {
+                    if (ordersData.success) setOrders(ordersData.orders);
+                    if (metricsData.success) setMetrics(metricsData.cards);
+                })
+                .finally(() => setLoading(false));
+            };
+
+            useEffect(() => {
+                loadOrdersAndMetrics();
+            }, [statusFilter]);
+
+            const handleSearchSubmit = (e) => {
+                e.preventDefault();
+                loadOrdersAndMetrics();
+            };
+
+            const handleMarkAsPaid = async (orderId) => {
+                setUpdatingStatus(true);
+                const token = localStorage.getItem('recupera_admin_token');
+                try {
+                    const res = await fetch(`/api/admin/orders/${orderId}/status`, {
+                        method: 'PATCH',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'Authorization': `Bearer ${token}`
+                        },
+                        body: JSON.stringify({ status: 'PAID' })
+                    });
+                    const data = await res.json();
+                    if (data.success) {
+                        if (selectedOrder) setSelectedOrder({ ...selectedOrder, status: 'PAID', paidAt: new Date().toISOString() });
+                        loadOrdersAndMetrics();
+                    }
+                } catch(e) {
+                    alert('Erro ao atualizar status.');
+                } finally {
+                    setUpdatingStatus(false);
+                }
+            };
+
+            return (
+                <div className="space-y-6">
+                    {/* HEADER */}
+                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-2">
+                        <div>
+                            <span className="text-[11px] font-extrabold uppercase tracking-widest text-textSec">OPERAÇÃO AO VIVO</span>
+                            <h2 className="text-xl sm:text-2xl font-extrabold text-navyMain tracking-tight">Pedidos</h2>
+                            <p className="text-xs sm:text-sm text-textSec mt-0.5">Pedidos persistidos dos gateways ativos com atualização automática.</p>
+                        </div>
+                        <button
+                            type="button"
+                            onClick={loadOrdersAndMetrics}
+                            className="px-4 py-2 rounded-xl border border-borderCol bg-white hover:bg-bgMain text-navyMain font-bold text-xs shadow-sm transition-all flex items-center gap-2 self-start sm:self-auto"
+                        >
+                            <Icon name="refresh-cw" className={`w-3.5 h-3.5 ${loading ? 'animate-spin-fast' : ''}`} />
+                            <span>Atualizar</span>
+                        </button>
+                    </div>
+
+                    {/* METRIC CARDS */}
+                    {metrics && (
+                        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+                            <div className="p-4 sm:p-5 rounded-card bg-white border border-borderCol shadow-card">
+                                <span className="text-xs font-bold text-textSec uppercase">Pedidos totais</span>
+                                <div className="text-xl sm:text-2xl font-black text-navyMain mt-1">{metrics.totalOrders}</div>
+                            </div>
+                            <div className="p-4 sm:p-5 rounded-card bg-white border border-borderCol shadow-card">
+                                <span className="text-xs font-bold text-amberWarn uppercase">Aguardando PIX</span>
+                                <div className="text-xl sm:text-2xl font-black text-amberWarn mt-1">{metrics.pendingOrders}</div>
+                            </div>
+                            <div className="p-4 sm:p-5 rounded-card bg-white border border-borderCol shadow-card">
+                                <span className="text-xs font-bold text-accentGreen uppercase">Pagamentos aprovados</span>
+                                <div className="text-xl sm:text-2xl font-black text-accentGreen mt-1">{metrics.paidOrders}</div>
+                            </div>
+                            <div className="p-4 sm:p-5 rounded-card bg-white border border-borderCol shadow-card">
+                                <span className="text-xs font-bold text-navyMain uppercase">Receita aprovada</span>
+                                <div className="text-xl sm:text-2xl font-black text-navyMain mt-1">R$ {Number(metrics.approvedRevenue || 0).toFixed(2)}</div>
+                            </div>
+                        </div>
+                    )}
+
+                    {/* FILTERS & SEARCH */}
+                    <div className="bg-white rounded-card border border-borderCol p-4 shadow-card flex flex-col sm:flex-row items-center justify-between gap-3">
+                        <form onSubmit={handleSearchSubmit} className="relative w-full sm:w-80">
+                            <Icon name="search" className="w-4 h-4 absolute left-3.5 top-1/2 -translate-y-1/2 text-textSec" />
+                            <input
+                                type="text"
+                                value={searchQuery}
+                                onChange={(e) => setSearchQuery(e.target.value)}
+                                placeholder="Buscar por cliente, e-mail ou ID..."
+                                className="w-full pl-9 pr-4 py-2 rounded-xl border border-borderCol text-xs text-navyMain bg-bgMain"
+                            />
+                        </form>
+
+                        <div className="flex items-center gap-2 w-full sm:w-auto">
+                            <span className="text-xs font-bold text-textSec whitespace-nowrap">Status:</span>
+                            <select
+                                value={statusFilter}
+                                onChange={(e) => setStatusFilter(e.target.value)}
+                                className="w-full sm:w-auto text-xs font-bold px-3 py-2 rounded-xl border border-borderCol bg-white text-navyMain"
+                            >
+                                <option value="ALL">Todos os status</option>
+                                <option value="PENDING">Aguardando (Pendente)</option>
+                                <option value="PAID">Pago (Aprovado)</option>
+                                <option value="FAILED">Falhou</option>
+                                <option value="CANCELED">Cancelado</option>
+                                <option value="EXPIRED">Expirado</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    {/* ORDERS TABLE */}
+                    <div className="bg-white rounded-card border border-borderCol shadow-card overflow-hidden">
+                        <div className="overflow-x-auto custom-scroll">
+                            <table className="w-full text-left border-collapse text-xs">
+                                <thead>
+                                    <tr className="bg-bgMain/70 border-b border-borderCol text-textSec font-bold uppercase tracking-wider">
+                                        <th className="py-3.5 px-4">Cliente</th>
+                                        <th className="py-3.5 px-4">E-mail</th>
+                                        <th className="py-3.5 px-4">Gateway</th>
+                                        <th className="py-3.5 px-4">Valor</th>
+                                        <th className="py-3.5 px-4">Status</th>
+                                        <th className="py-3.5 px-4">Data</th>
+                                        <th className="py-3.5 px-4">ID Transação</th>
+                                    </tr>
+                                </thead>
+                                <tbody className="divide-y divide-borderCol">
+                                    {orders.map(order => {
+                                        const isPaid = order.status === 'PAID' || order.status === 'APPROVED';
+                                        const isPending = order.status === 'PENDING';
+                                        const isFail = !isPaid && !isPending;
+
+                                        return (
+                                            <tr
+                                                key={order.id}
+                                                onClick={() => setSelectedOrder(order)}
+                                                className="hover:bg-bgMain/50 cursor-pointer transition-colors"
+                                            >
+                                                <td className="py-3.5 px-4 font-bold text-navyMain whitespace-nowrap">
+                                                    {order.clientName}
+                                                </td>
+                                                <td className="py-3.5 px-4 text-textSec whitespace-nowrap">
+                                                    {order.email}
+                                                </td>
+                                                <td className="py-3.5 px-4 font-semibold text-navySec whitespace-nowrap">
+                                                    {order.gateway}
+                                                </td>
+                                                <td className="py-3.5 px-4 font-extrabold text-navyMain whitespace-nowrap">
+                                                    R$ {Number(order.amount).toFixed(2)}
+                                                </td>
+                                                <td className="py-3.5 px-4 whitespace-nowrap">
+                                                    <span className={`text-[10px] font-extrabold px-2.5 py-1 rounded-full uppercase ${
+                                                        isPaid
+                                                            ? 'bg-greenSoft text-accentGreen border border-accentGreen/20'
+                                                            : isPending
+                                                                ? 'bg-amberSoft text-amberWarn border border-amberWarn/20'
+                                                                : 'bg-redSoft text-redFail border border-redFail/20'
+                                                    }`}>
+                                                        {isPaid ? 'Pago' : isPending ? 'Pendente' : order.status}
+                                                    </span>
+                                                </td>
+                                                <td className="py-3.5 px-4 text-textSec whitespace-nowrap">
+                                                    {new Date(order.createdAt).toLocaleString('pt-BR', { dateStyle: 'short', timeStyle: 'short' })}
+                                                </td>
+                                                <td className="py-3.5 px-4 font-mono text-[11px] text-textSec whitespace-nowrap">
+                                                    {order.transactionId || order.id}
+                                                </td>
+                                            </tr>
+                                        );
+                                    })}
+
+                                    {orders.length === 0 && (
+                                        <tr>
+                                            <td colSpan="7" className="py-12 text-center text-textSec font-semibold">
+                                                Nenhum pedido encontrado com os filtros aplicados.
+                                            </td>
+                                        </tr>
+                                    )}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                    {/* ORDER DETAIL DRAWER */}
+                    {selectedOrder && (
+                        <div className="fixed inset-0 z-50 flex justify-end">
+                            <div className="fixed inset-0 bg-navyMain/40 backdrop-blur-sm" onClick={() => setSelectedOrder(null)}></div>
+                            <div className="relative w-full max-w-[480px] bg-white h-full shadow-drawer z-10 flex flex-col justify-between p-6 sm:p-7 overflow-y-auto custom-scroll">
+                                <div className="space-y-6">
+                                    <div className="flex items-center justify-between pb-4 border-b border-borderCol">
+                                        <div>
+                                            <span className="text-[10px] font-extrabold uppercase tracking-widest text-textSec">DETALHES DO PEDIDO</span>
+                                            <h3 className="text-lg font-black text-navyMain font-mono">{selectedOrder.id}</h3>
+                                        </div>
+                                        <button
+                                            onClick={() => setSelectedOrder(null)}
+                                            className="p-1.5 text-textSec hover:text-navyMain rounded-lg"
+                                            aria-label="Fechar detalhes"
+                                        >
+                                            <Icon name="x" className="w-5 h-5" />
+                                        </button>
+                                    </div>
+
+                                    {/* STATUS BADGE */}
+                                    <div className="p-4 rounded-xl bg-bgMain border border-borderCol flex items-center justify-between">
+                                        <div>
+                                            <span className="text-xs text-textSec block">Valor total</span>
+                                            <span className="text-2xl font-black text-navyMain">R$ {Number(selectedOrder.amount).toFixed(2)}</span>
+                                        </div>
+                                        <span className={`text-xs font-black px-3 py-1 rounded-full uppercase ${
+                                            selectedOrder.status === 'PAID'
+                                                ? 'bg-greenSoft text-accentGreen'
+                                                : selectedOrder.status === 'PENDING'
+                                                    ? 'bg-amberSoft text-amberWarn'
+                                                    : 'bg-redSoft text-redFail'
+                                        }`}>
+                                            {selectedOrder.status === 'PAID' ? 'Pago' : selectedOrder.status === 'PENDING' ? 'Pendente' : selectedOrder.status}
+                                        </span>
+                                    </div>
+
+                                    {/* CLIENT DATA */}
+                                    <div className="space-y-3">
+                                        <h4 className="text-xs font-bold text-navySec uppercase tracking-wider">Dados do Cliente</h4>
+                                        <div className="space-y-2 text-xs">
+                                            <div className="flex justify-between py-1 border-b border-borderCol">
+                                                <span className="text-textSec">Nome:</span>
+                                                <span className="font-bold text-navyMain">{selectedOrder.clientName}</span>
+                                            </div>
+                                            <div className="flex justify-between py-1 border-b border-borderCol">
+                                                <span className="text-textSec">E-mail:</span>
+                                                <span className="font-bold text-navyMain">{selectedOrder.email}</span>
+                                            </div>
+                                            <div className="flex justify-between py-1 border-b border-borderCol">
+                                                <span className="text-textSec">CPF (Mascarado):</span>
+                                                <span className="font-mono font-bold text-navyMain">{selectedOrder.cpfMasked || '080.***.***-88'}</span>
+                                            </div>
+                                            <div className="flex justify-between py-1 border-b border-borderCol">
+                                                <span className="text-textSec">Telefone (Mascarado):</span>
+                                                <span className="font-mono font-bold text-navyMain">{selectedOrder.phoneMasked || '(11) 9****-****'}</span>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    {/* TRANSACTION DETAILS */}
+                                    <div className="space-y-3">
+                                        <h4 className="text-xs font-bold text-navySec uppercase tracking-wider">Dados da Cobrança PIX</h4>
+                                        <div className="space-y-2 text-xs">
+                                            <div className="flex justify-between py-1 border-b border-borderCol">
+                                                <span className="text-textSec">Gateway:</span>
+                                                <span className="font-bold text-navyMain">{selectedOrder.gateway}</span>
+                                            </div>
+                                            <div className="flex justify-between py-1 border-b border-borderCol">
+                                                <span className="text-textSec">ID Transação:</span>
+                                                <span className="font-mono text-[11px] font-bold text-navyMain">{selectedOrder.transactionId}</span>
+                                            </div>
+                                            <div className="flex justify-between py-1 border-b border-borderCol">
+                                                <span className="text-textSec">Item:</span>
+                                                <span className="font-medium text-navyMain text-right max-w-[240px]">{selectedOrder.itemTitle}</span>
+                                            </div>
+                                            <div className="flex justify-between py-1 border-b border-borderCol">
+                                                <span className="text-textSec">Data de Criação:</span>
+                                                <span className="font-medium text-navyMain">{new Date(selectedOrder.createdAt).toLocaleString('pt-BR')}</span>
+                                            </div>
+                                            {selectedOrder.paidAt && (
+                                                <div className="flex justify-between py-1 border-b border-borderCol">
+                                                    <span className="text-textSec">Data de Aprovação:</span>
+                                                    <span className="font-bold text-accentGreen">{new Date(selectedOrder.paidAt).toLocaleString('pt-BR')}</span>
+                                                </div>
+                                            )}
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div className="pt-6 border-t border-borderCol space-y-2">
+                                    {selectedOrder.status !== 'PAID' && (
+                                        <button
+                                            type="button"
+                                            onClick={() => handleMarkAsPaid(selectedOrder.id)}
+                                            disabled={updatingStatus}
+                                            className="w-full py-3 rounded-xl bg-accentGreen hover:bg-[#099268] text-white font-bold text-xs shadow-md transition-all flex items-center justify-center gap-2"
+                                        >
+                                            <Icon name="check" className="w-4 h-4" />
+                                            <span>{updatingStatus ? 'Atualizando...' : 'Confirmar Pagamento Manualmente'}</span>
+                                        </button>
+                                    )}
+
+                                    <button
+                                        type="button"
+                                        onClick={() => setSelectedOrder(null)}
+                                        className="w-full py-2.5 rounded-xl border border-borderCol bg-white hover:bg-bgMain text-navyMain font-bold text-xs transition-all"
+                                    >
+                                        Fechar
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    )}
+                </div>
+            );
+        }
+
+        // --- 5. RETENTION VIEW ---
+        function RetentionView() {
+            const [data, setData] = useState(null);
+            const [loading, setLoading] = useState(true);
+
+            useEffect(() => {
+                const token = localStorage.getItem('recupera_admin_token');
+                fetch('/api/admin/metrics', {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                })
+                .then(r => r.json())
+                .then(res => {
+                    if (res.success && res.retention) {
+                        setData(res.retention);
+                    }
+                })
+                .finally(() => setLoading(false));
+            }, []);
+
+            if (loading || !data) {
+                return (
+                    <div className="py-20 flex justify-center">
+                        <div className="w-8 h-8 border-4 border-accentGreen/20 border-t-accentGreen rounded-full animate-spin-fast"></div>
+                    </div>
+                );
+            }
+
+            return (
+                <div className="space-y-6">
+                    {/* HEADER */}
+                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-2">
+                        <div>
+                            <span className="text-[11px] font-extrabold uppercase tracking-widest text-textSec">INDICADORES DE CONVERSÃO</span>
+                            <h2 className="text-xl sm:text-2xl font-extrabold text-navyMain tracking-tight">Retenção e Funil</h2>
+                            <p className="text-xs sm:text-sm text-textSec mt-0.5">Acompanhamento contínuo de conversão e sessões únicas entre etapas.</p>
+                        </div>
+                        <div className="px-3 py-1.5 rounded-full bg-blueSoft text-blueInfo text-xs font-bold border border-blueInfo/20 self-start sm:self-auto">
+                            {data.period || 'Últimos 30 dias'}
+                        </div>
+                    </div>
+
+                    {/* HERO RETENTION CARD */}
+                    <div className="bg-navyMain text-white rounded-card p-6 sm:p-8 shadow-soft flex flex-col md:flex-row items-start md:items-center justify-between gap-6">
+                        <div className="space-y-2">
+                            <span className="text-xs font-bold text-accentGreen uppercase tracking-widest">RETENÇÃO GERAL DA OPERAÇÃO</span>
+                            <div className="flex items-baseline gap-3">
+                                <span className="text-4xl sm:text-5xl font-black tracking-tight">{data.overallPercentage}%</span>
+                                <span className="text-xs text-slate-300 font-medium">taxa média de passagem completa pelo funil</span>
+                            </div>
+                            <p className="text-xs text-slate-400 max-w-[540px] pt-1">
+                                A retenção é calculada a partir de sessões anônimas únicas registradas nas etapas do funil de atendimento, sem depender apenas dos pedidos PIX emitidos.
+                            </p>
+                        </div>
+
+                        <div className="grid grid-cols-2 gap-4 w-full md:w-auto border-t md:border-t-0 md:border-l border-slate-700 pt-4 md:pt-0 md:pl-8">
+                            <div>
+                                <span className="text-[11px] font-semibold text-slate-400 block">Clientes Recorrentes</span>
+                                <span className="text-xl font-bold text-white mt-0.5 block">{data.recurrentClients}</span>
+                            </div>
+                            <div>
+                                <span className="text-[11px] font-semibold text-slate-400 block">Taxa de Repetição</span>
+                                <span className="text-xl font-bold text-accentGreen mt-0.5 block">{data.repetitionRate}</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    {/* 3 FUNNEL CARDS */}
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
+                        {data.funnel.map((stage, idx) => (
+                            <div key={stage.stage} className="bg-white rounded-card border border-borderCol p-5 sm:p-6 shadow-card flex flex-col justify-between space-y-4">
+                                <div>
+                                    <div className="flex items-center justify-between mb-2">
+                                        <span className="text-xs font-bold text-textSec uppercase tracking-wider">
+                                            Etapa {idx + 1} · {stage.stage}
+                                        </span>
+                                        <span className="text-xs font-black text-navyMain bg-bgMain px-2.5 py-1 rounded-full border border-borderCol">
+                                            {stage.rate}
+                                        </span>
+                                    </div>
+                                    <h4 className="text-2xl font-black text-navyMain">{stage.sessions.toLocaleString()} <span className="text-xs font-medium text-textSec">sessões</span></h4>
+                                    <p className="text-xs text-textSec mt-1.5">{stage.description}</p>
+                                </div>
+
+                                <div className="space-y-1.5 pt-2">
+                                    <div className="flex justify-between text-[11px] font-semibold text-textSec">
+                                        <span>Conversão relativa</span>
+                                        <span className="font-bold text-navyMain">{stage.progress}%</span>
+                                    </div>
+                                    <div className="w-full h-2.5 bg-bgMain rounded-full overflow-hidden border border-borderCol">
+                                        <div 
+                                            className="h-full rounded-full transition-all duration-500" 
+                                            style={{ width: `${stage.progress}%`, backgroundColor: stage.color }}
+                                        ></div>
+                                    </div>
+                                </div>
+                            </div>
+                        ))}
+                    </div>
+                </div>
+            );
+        }
+
+        // Mount React application
+        const root = ReactDOM.createRoot(document.getElementById('root'));
+        root.render(<App />);
+    </script>
+</body>
+</html>

