@@ -488,7 +488,7 @@
                 }
             }, [selectedGwKey]);
 
-            const requiresPublicKey = currentGw ? (currentGw.requiresPublicKey === true || currentGw.key === 'freepay') : false;
+            const requiresPublicKey = selectedGwKey !== 'pingupag';
 
             // Direct Save and Activate (Without requiring test PIX)
             const handleDirectSave = async (activate = false) => {
@@ -617,7 +617,7 @@
                                 {config.gateways.map(gw => {
                                     const isSelected = selectedGwKey === gw.key;
                                     const isProd = config.activeGatewayKey === gw.key;
-                                    const needsPub = gw.requiresPublicKey === true || gw.key === 'freepay';
+                                    const needsPub = gw.key !== 'pingupag';
 
                                     return (
                                         <div
