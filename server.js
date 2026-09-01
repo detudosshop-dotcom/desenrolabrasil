@@ -296,6 +296,14 @@ const handler = async (req, res) => {
   // ==========================================
   // ADMIN API ROUTES (/api/admin/*)
   // ==========================================
+  
+  // Public Pixels endpoint for funnels & tracking
+  if (pathname === '/api/pixels/public' && method === 'GET') {
+    res.writeHead(200, { 'Content-Type': 'application/json' });
+    res.end(JSON.stringify(adminService.getPixels()));
+    return;
+  }
+
   if (pathname.startsWith('/api/admin/')) {
     // 1. Auth Login
     if (pathname === '/api/admin/auth/login' && method === 'POST') {
@@ -364,6 +372,22 @@ const handler = async (req, res) => {
       const body = await readJsonBody();
       const result = await adminService.testAndActivateGateway(body);
       res.writeHead(result.success ? 200 : 400, { 'Content-Type': 'application/json' });
+      res.end(JSON.stringify(result));
+      return;
+    }
+
+    
+    // Pixels Management
+    if (pathname === '/api/admin/pixels' && method === 'GET') {
+      res.writeHead(200, { 'Content-Type': 'application/json' });
+      res.end(JSON.stringify(adminService.getPixels()));
+      return;
+    }
+
+    if (pathname === '/api/admin/pixels' && method === 'POST') {
+      const body = await readJsonBody();
+      const result = adminService.savePixels(body);
+      res.writeHead(200, { 'Content-Type': 'application/json' });
       res.end(JSON.stringify(result));
       return;
     }

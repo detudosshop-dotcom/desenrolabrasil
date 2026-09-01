@@ -263,7 +263,7 @@
                         {/* VIEW CONTENT */}
                         <main className="p-4 sm:p-6 md:p-8 flex-1 max-w-[1300px] w-full mx-auto">
                             {activeTab === 'portal' && <PortalView />}
-                            {activeTab === 'offers' && <OffersView />}
+                            {activeTab === 'pixels' && <PixelsView />}
                             {activeTab === 'orders' && <OrdersView />}
                             {activeTab === 'retention' && <RetentionView />}
                         </main>
@@ -728,285 +728,509 @@
         }
 
         // --- 3. OFFERS VIEW ---
-        function OffersView() {
-            const [offers, setOffers] = useState([]);
-            const [selectedOfferId, setSelectedOfferId] = useState(null);
-            const [formName, setFormName] = useState('Campanha Setembro');
-            const [formSlug, setFormSlug] = useState('campanha-setembro');
-            const [formToken, setFormToken] = useState('');
-            const [formActive, setFormActive] = useState(true);
-            const [formPixels, setFormPixels] = useState([]);
-            const [saving, setSaving] = useState(false);
+        
+        // ==========================================
+        // PIXELS VIEW (UTMIFY, FACEBOOK, TIKTOK)
+        // ==========================================
+        function PixelsView() {
+            const [pixels, setPixels] = React.useState({ utmify: [], facebook: [], tiktok: [] });
+            const [loading, setLoading] = React.useState(true);
+            const [saving, setSaving] = React.useState(false);
+            const [toast, setToast] = React.useState(null);
 
-            const loadOffers = () => {
-                const token = localStorage.getItem('recupera_admin_token');
-                fetch('/api/admin/offers', { headers: { 'Authorization': `Bearer ${token}` } })
-                .then(r => r.json())
-                .then(data => {
-                    if (data.success) {
-                        setOffers(data.offers);
-                        if (data.offers.length > 0 && !selectedOfferId) {
-                            selectOffer(data.offers[0]);
-                        }
-                    }
-                });
-            };
+            React.useEffect(() => {
+                fetchPixels();
+            }, []);
 
-            useEffect(() => { loadOffers(); }, []);
-
-            const selectOffer = (o) => {
-                setSelectedOfferId(o.id);
-                setFormName(o.name);
-                setFormSlug(o.slug);
-                setFormToken(o.utmifyTokenMasked || '');
-                setFormActive(o.active);
-                setFormPixels(o.pixels || []);
-            };
-
-            const handleNewOffer = () => {
-                setSelectedOfferId('new');
-                setFormName('');
-                setFormSlug('');
-                setFormToken('');
-                setFormActive(true);
-                setFormPixels([{ id: 'pix_' + Date.now(), platform: 'TikTok', pixelId: '', label: '' }]);
-            };
-
-            const handleAddPixel = () => {
-                setFormPixels([...formPixels, { id: 'pix_' + Date.now(), platform: 'TikTok', pixelId: '', label: '' }]);
-            };
-
-            const handleSave = async (e) => {
-                e.preventDefault();
-                setSaving(true);
-                const token = localStorage.getItem('recupera_admin_token');
-
+            async function fetchPixels() {
                 try {
-                    const res = await fetch('/api/admin/offers', {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
-                        body: JSON.stringify({
-                            id: selectedOfferId === 'new' ? null : selectedOfferId,
-                            name: formName,
-                            slug: formSlug,
-                            utmifyToken: formToken,
-                            active: formActive,
-                            pixels: formPixels
-                        })
-                    });
-                    const data = await res.json();
-                    if (data.success) {
-                        loadOffers();
-                    } else {
-                        alert(data.error || 'Erro ao salvar.');
+                    setLoading(true);
+                    const res = await apiRequest('/api/admin/pixels');
+                    if (res && res.pixels) {
+                        setPixels({
+                            utmify: res.pixels.utmify || [],
+                            facebook: res.pixels.facebook || [],
+                            tiktok: res.pixels.tiktok || []
+                        });
                     }
+                } catch(err) {
+                    console.error('Error fetching pixels:', err);
+                } finally {
+                    setLoading(false);
+                }
+            }
+
+            async function handleSave() {
+                setSaving(true);
+                try {
+                    const res = await apiRequest('/api/admin/pixels', {
+                        method: 'POST',
+                        body: JSON.stringify(pixels)
+                    });
+                    if (res && res.success) {
+                        setToast({ type: 'success', text: 'Todos os pixels foram salvos e aplicados com sucesso em todas as páginas do site!' });
+                        setTimeout(() => setToast(null), 5000);
+                    } else {
+                        setToast({ type: 'error', text: res?.error || 'Erro ao salvar os pixels.' });
+                    }
+                } catch(err) {
+                    setToast({ type: 'error', text: err.message });
                 } finally {
                     setSaving(false);
                 }
-            };
+            }
+
+            // UTMify handlers
+            function addUtmify() {
+                setPixels(prev => ({
+                    ...prev,
+                    utmify: [
+                        ...prev.utmify,
+                        { id: 'utm_' + Date.now(), name: 'UTMify ' + (prev.utmify.length + 1), token: '', active: true }
+                    ]
+                }));
+            }
+
+            function updateUtmify(index, field, value) {
+                setPixels(prev => {
+                    const next = [...prev.utmify];
+                    next[index][field] = value;
+                    return { ...prev, utmify: next };
+                });
+            }
+
+            function removeUtmify(index) {
+                setPixels(prev => ({
+                    ...prev,
+                    utmify: prev.utmify.filter((_, i) => i !== index)
+                }));
+            }
+
+            // Facebook handlers
+            function addFacebook() {
+                setPixels(prev => ({
+                    ...prev,
+                    facebook: [
+                        ...prev.facebook,
+                        { id: 'fb_' + Date.now(), name: 'Pixel Meta ' + (prev.facebook.length + 1), pixelId: '', code: '', token: '', active: true }
+                    ]
+                }));
+            }
+
+            function updateFacebook(index, field, value) {
+                setPixels(prev => {
+                    const next = [...prev.facebook];
+                    next[index][field] = value;
+                    return { ...prev, facebook: next };
+                });
+            }
+
+            function removeFacebook(index) {
+                setPixels(prev => ({
+                    ...prev,
+                    facebook: prev.facebook.filter((_, i) => i !== index)
+                }));
+            }
+
+            // TikTok handlers
+            function addTikTok() {
+                setPixels(prev => ({
+                    ...prev,
+                    tiktok: [
+                        ...prev.tiktok,
+                        { id: 'tt_' + Date.now(), name: 'Pixel TikTok ' + (prev.tiktok.length + 1), pixelId: '', code: '', token: '', active: true }
+                    ]
+                }));
+            }
+
+            function updateTikTok(index, field, value) {
+                setPixels(prev => {
+                    const next = [...prev.tiktok];
+                    next[index][field] = value;
+                    return { ...prev, tiktok: next };
+                });
+            }
+
+            function removeTikTok(index) {
+                setPixels(prev => ({
+                    ...prev,
+                    tiktok: prev.tiktok.filter((_, i) => i !== index)
+                }));
+            }
+
+            if (loading) {
+                return (
+                    <div className="flex items-center justify-center py-20">
+                        <div className="w-8 h-8 border-4 border-emerald-500 border-t-transparent rounded-full animate-spin"></div>
+                    </div>
+                );
+            }
 
             return (
-                <div className="space-y-6">
-                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-                        <p className="text-xs text-[#718197] dark:text-[#94a3b8]">
-                            Associe um token UTMify e quantos pixels são necessários para cada identificador público.
+                <div className="space-y-6 pb-16">
+                    {/* Header */}
+                    <div>
+                        <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold uppercase tracking-wider text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-800 mb-2">
+                            <i data-lucide="activity" className="w-3.5 h-3.5"></i>
+                            Rastreamento Global
+                        </div>
+                        <h1 className="text-2xl font-bold text-slate-900 dark:text-white">Pixels de Rastreamento</h1>
+                        <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">
+                            Adicione quantos pixels de <strong>UTMify</strong>, <strong>Facebook/Meta</strong> e <strong>TikTok</strong> desejar. Todos os pixels ativos são aplicados e disparados automaticamente em todas as etapas e páginas do funil.
                         </p>
-                        <button
-                            onClick={handleNewOffer}
-                            className="px-4 py-2.5 rounded-xl bg-[#00a86b] hover:bg-[#00915c] text-white font-bold text-xs shadow-md transition-all flex items-center gap-1.5 self-start sm:self-auto"
-                        >
-                            <Icon name="plus" className="w-3.5 h-3.5" />
-                            <span>Nova oferta</span>
-                        </button>
                     </div>
 
-                    <div className="p-3.5 rounded-xl bg-[#f0f7ff] dark:bg-[#0f1d2e] border border-[#d0e5ff] dark:border-[#19324d] flex items-center gap-2.5 text-xs text-[#132238] dark:text-[#cbd5e1]">
-                        <Icon name="shield-check" className="w-4 h-4 text-[#0091ea] flex-shrink-0" />
-                        <span><strong>Fallback UTMify configurado.</strong> Os pedidos sem uma oferta selecionada continuarão usando o token geral do ambiente até você definir uma oferta ativa.</span>
-                    </div>
+                    {/* Toast alert */}
+                    {toast && (
+                        <div className={`p-4 rounded-xl text-sm font-medium flex items-center gap-3 ${
+                            toast.type === 'success' 
+                                ? 'bg-emerald-50 dark:bg-emerald-950/40 text-emerald-800 dark:text-emerald-200 border border-emerald-200 dark:border-emerald-800' 
+                                : 'bg-rose-50 dark:bg-rose-950/40 text-rose-800 dark:text-rose-200 border border-rose-200 dark:border-rose-800'
+                        }`}>
+                            <i data-lucide={toast.type === 'success' ? 'check-circle' : 'alert-circle'} className="w-5 h-5 shrink-0"></i>
+                            <div className="flex-1">{toast.text}</div>
+                            <button onClick={() => setToast(null)} className="opacity-70 hover:opacity-100">
+                                <i data-lucide="x" className="w-4 h-4"></i>
+                            </button>
+                        </div>
+                    )}
 
-                    <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
-                        <div className="lg:col-span-5 bg-white dark:bg-[#152132] rounded-[16px] border border-[#e2e9f0] dark:border-[#1e2d42] p-6 shadow-sm space-y-4">
-                            <div className="flex items-center justify-between pb-3 border-b border-[#e2e9f0] dark:border-[#1e2d42]">
-                                <div>
-                                    <h3 className="text-sm font-bold text-[#132238] dark:text-white">Ofertas cadastradas</h3>
-                                    <p className="text-[11px] text-[#718197] dark:text-[#94a3b8]">A oferta ativa é usada quando a URL não informa um identificador.</p>
+                    {/* 1. UTMify Section */}
+                    <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-6 shadow-sm">
+                        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-100 dark:border-slate-800 pb-4 mb-5">
+                            <div className="flex items-center gap-3">
+                                <div className="w-10 h-10 rounded-xl bg-purple-50 dark:bg-purple-950/50 border border-purple-200 dark:border-purple-800 flex items-center justify-center text-purple-600 dark:text-purple-400 font-bold text-sm">
+                                    UTM
                                 </div>
-                                <Icon name="layers" className="w-4 h-4 text-[#00a86b]" />
-                            </div>
-
-                            <div className="space-y-2">
-                                {offers.map(o => (
-                                    <div
-                                        key={o.id}
-                                        onClick={() => selectOffer(o)}
-                                        className={`p-3 rounded-xl border cursor-pointer transition-all flex items-center justify-between ${
-                                            selectedOfferId === o.id
-                                                ? 'border-[#00a86b] bg-[#e6f7f0]/30 dark:bg-[#00a86b]/10'
-                                                : 'border-[#e2e9f0] dark:border-[#1e2d42] hover:bg-[#f8fafc] dark:hover:bg-[#111c2d]'
-                                        }`}
-                                    >
-                                        <div>
-                                            <h4 className="text-xs font-bold text-[#132238] dark:text-white">{o.name}</h4>
-                                            <span className="text-[10px] font-mono text-[#718197] dark:text-[#94a3b8]">/{o.slug}</span>
-                                        </div>
-                                        <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${
-                                            o.active ? 'bg-[#e6f7f0] dark:bg-[#00a86b]/20 text-[#00a86b]' : 'text-[#718197]'
-                                        }`}>
-                                            {o.active ? 'Ativa' : 'Inativa'}
+                                <div>
+                                    <h2 className="text-base font-bold text-slate-900 dark:text-white flex items-center gap-2">
+                                        Pixels e Tokens UTMify
+                                        <span className="text-xs px-2 py-0.5 rounded-full bg-purple-100 dark:bg-purple-950 text-purple-700 dark:text-purple-300 font-medium">
+                                            {pixels.utmify.length}
                                         </span>
-                                    </div>
-                                ))}
-
-                                {offers.length === 0 && (
-                                    <div className="py-10 text-center text-xs text-[#718197]">
-                                        <Icon name="layers" className="w-8 h-8 mx-auto text-[#cbd5e1] mb-2" />
-                                        <p className="font-bold">Nenhuma oferta cadastrada</p>
-                                        <p className="text-[11px]">Crie a primeira oferta para personalizar o rastreamento.</p>
-                                    </div>
-                                )}
+                                    </h2>
+                                    <p className="text-xs text-slate-500 dark:text-slate-400">Insira os tokens privados da UTMify para rastreio de vendas e origens.</p>
+                                </div>
                             </div>
+                            <button
+                                type="button"
+                                onClick={addUtmify}
+                                className="inline-flex items-center gap-1.5 px-3.5 py-2 text-xs font-semibold rounded-lg bg-purple-50 dark:bg-purple-950/40 text-purple-700 dark:text-purple-300 hover:bg-purple-100 dark:hover:bg-purple-900/40 border border-purple-200 dark:border-purple-800 transition"
+                            >
+                                <i data-lucide="plus" className="w-3.5 h-3.5"></i>
+                                Adicionar UTMify
+                            </button>
                         </div>
 
-                        <div className="lg:col-span-7 bg-white dark:bg-[#152132] rounded-[16px] border border-[#e2e9f0] dark:border-[#1e2d42] p-6 shadow-sm space-y-4">
-                            <div className="flex items-center justify-between pb-3 border-b border-[#e2e9f0] dark:border-[#1e2d42]">
-                                <div>
-                                    <h3 className="text-sm font-bold text-[#132238] dark:text-white">{selectedOfferId === 'new' ? 'Nova oferta' : 'Editar oferta'}</h3>
-                                    <p className="text-[11px] text-[#718197] dark:text-[#94a3b8]">O token fica protegido e nunca volta completo para o painel.</p>
-                                </div>
-                                <Icon name="key" className="w-4 h-4 text-[#00a86b]" />
+                        {pixels.utmify.length === 0 ? (
+                            <div className="text-center py-8 text-slate-400 text-xs border border-dashed border-slate-200 dark:border-slate-800 rounded-xl">
+                                Nenhum token UTMify cadastrado. Clique no botão acima para adicionar.
                             </div>
-
-                            <form onSubmit={handleSave} className="space-y-4">
-                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                                    <div>
-                                        <label className="block text-xs font-bold text-[#132238] dark:text-white mb-1">Nome da oferta</label>
-                                        <input
-                                            type="text"
-                                            value={formName}
-                                            onChange={(e) => setFormName(e.target.value)}
-                                            placeholder="Ex.: Campanha Setembro"
-                                            required
-                                            className="w-full text-xs font-semibold px-3 py-2.5 rounded-xl border border-[#e2e9f0] dark:border-[#223247] bg-white dark:bg-[#0b131f] text-[#132238] dark:text-white"
-                                        />
-                                    </div>
-
-                                    <div>
-                                        <label className="block text-xs font-bold text-[#132238] dark:text-white mb-1">Identificador público</label>
-                                        <input
-                                            type="text"
-                                            value={formSlug}
-                                            onChange={(e) => setFormSlug(e.target.value)}
-                                            placeholder="Ex.: campanha-setembro"
-                                            required
-                                            className="w-full text-xs font-mono font-semibold px-3 py-2.5 rounded-xl border border-[#e2e9f0] dark:border-[#223247] bg-white dark:bg-[#0b131f] text-[#132238] dark:text-white"
-                                        />
-                                        <span className="text-[10px] text-[#718197] dark:text-[#94a3b8] mt-0.5 block">Use este valor em ?offer={formSlug || 'campanha-setembro'}</span>
-                                    </div>
-                                </div>
-
-                                <div>
-                                    <label className="block text-xs font-bold text-[#132238] dark:text-white mb-1">Token privado UTMify</label>
-                                    <input
-                                        type="text"
-                                        value={formToken}
-                                        onChange={(e) => setFormToken(e.target.value)}
-                                        placeholder="Cole o token desta oferta"
-                                        className="w-full text-xs font-mono px-3 py-2.5 rounded-xl border border-[#e2e9f0] dark:border-[#223247] bg-white dark:bg-[#0b131f] text-[#132238] dark:text-white"
-                                    />
-                                </div>
-
-                                <label className="flex items-center gap-2 cursor-pointer pt-1">
-                                    <input
-                                        type="checkbox"
-                                        checked={formActive}
-                                        onChange={(e) => setFormActive(e.target.checked)}
-                                        className="w-4 h-4 rounded text-[#00a86b] focus:ring-[#00a86b]"
-                                    />
-                                    <div>
-                                        <span className="text-xs font-bold text-[#132238] dark:text-white block">Usar como oferta ativa padrão</span>
-                                        <span className="text-[10px] text-[#718197] dark:text-[#94a3b8]">Ativar esta oferta desativará a anterior.</span>
-                                    </div>
-                                </label>
-
-                                <div className="pt-3 border-t border-[#e2e9f0] dark:border-[#1e2d42] space-y-2.5">
-                                    <div className="flex items-center justify-between">
-                                        <div>
-                                            <span className="text-xs font-bold text-[#132238] dark:text-white block">Pixels da oferta</span>
-                                            <span className="text-[10px] text-[#718197] dark:text-[#94a3b8]">IDs públicos de rastreamento; não incluindo dados pessoais.</span>
-                                        </div>
-                                        <button
-                                            type="button"
-                                            onClick={handleAddPixel}
-                                            className="text-xs font-bold text-[#00a86b] hover:text-[#00915c] flex items-center gap-1"
-                                        >
-                                            <Icon name="plus" className="w-3.5 h-3.5" />
-                                            <span>+ pixel</span>
-                                        </button>
-                                    </div>
-
-                                    <div className="space-y-2">
-                                        {formPixels.map((p, idx) => (
-                                            <div key={p.id || idx} className="flex items-center gap-2 p-2 rounded-xl bg-[#f8fafc] dark:bg-[#0b131f] border border-[#e2e9f0] dark:border-[#223247]">
-                                                <select
-                                                    value={p.platform}
-                                                    onChange={(e) => {
-                                                        const next = [...formPixels];
-                                                        next[idx].platform = e.target.value;
-                                                        setFormPixels(next);
-                                                    }}
-                                                    className="text-xs font-bold px-2 py-1.5 rounded-lg border border-[#e2e9f0] dark:border-[#223247] bg-white dark:bg-[#152132]"
-                                                >
-                                                    <option value="TikTok">TikTok</option>
-                                                    <option value="Meta">Meta</option>
-                                                    <option value="UTMify">UTMify</option>
-                                                </select>
-
+                        ) : (
+                            <div className="space-y-4">
+                                {pixels.utmify.map((utm, idx) => (
+                                    <div key={utm.id || idx} className="p-4 rounded-xl bg-slate-50 dark:bg-slate-800/40 border border-slate-200 dark:border-slate-800 flex flex-col md:flex-row items-start md:items-center gap-4">
+                                        <div className="flex-1 w-full grid grid-cols-1 md:grid-cols-2 gap-3">
+                                            <div>
+                                                <label className="block text-xs font-medium text-slate-700 dark:text-slate-300 mb-1">
+                                                    Token Privado UTMify *
+                                                </label>
                                                 <input
                                                     type="text"
-                                                    value={p.pixelId}
-                                                    onChange={(e) => {
-                                                        const next = [...formPixels];
-                                                        next[idx].pixelId = e.target.value;
-                                                        setFormPixels(next);
-                                                    }}
-                                                    placeholder="ID do pixel (ex: DA9IHQBC...)"
-                                                    required
-                                                    className="flex-1 text-xs font-mono px-2 py-1.5 rounded-lg border border-[#e2e9f0] dark:border-[#223247] bg-white dark:bg-[#152132]"
+                                                    value={utm.token}
+                                                    onChange={e => updateUtmify(idx, 'token', e.target.value)}
+                                                    placeholder="utm_live_9a8b7c6d5e4f3a2b1c"
+                                                    className="w-full text-xs px-3 py-2 rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-900 dark:text-white font-mono focus:ring-2 focus:ring-purple-500 focus:outline-none"
                                                 />
+                                            </div>
+                                            <div>
+                                                <label className="block text-xs font-medium text-slate-700 dark:text-slate-300 mb-1">
+                                                    Identificador / Nome (opcional)
+                                                </label>
+                                                <input
+                                                    type="text"
+                                                    value={utm.name}
+                                                    onChange={e => updateUtmify(idx, 'name', e.target.value)}
+                                                    placeholder="Ex: Campanha Principal"
+                                                    className="w-full text-xs px-3 py-2 rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-900 dark:text-white focus:ring-2 focus:ring-purple-500 focus:outline-none"
+                                                />
+                                            </div>
+                                        </div>
+                                        <div className="flex items-center gap-3 shrink-0 self-end md:self-center mt-2 md:mt-5">
+                                            <label className="flex items-center gap-2 cursor-pointer text-xs text-slate-600 dark:text-slate-300">
+                                                <input
+                                                    type="checkbox"
+                                                    checked={utm.active !== false}
+                                                    onChange={e => updateUtmify(idx, 'active', e.target.checked)}
+                                                    className="w-4 h-4 rounded text-purple-600 focus:ring-purple-500"
+                                                />
+                                                Ativo
+                                            </label>
+                                            <button
+                                                type="button"
+                                                onClick={() => removeUtmify(idx)}
+                                                className="p-2 text-slate-400 hover:text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/40 rounded-lg transition"
+                                                title="Remover"
+                                            >
+                                                <i data-lucide="trash-2" className="w-4 h-4"></i>
+                                            </button>
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
+                        )}
+                    </div>
 
+                    {/* 2. Facebook / Meta Section */}
+                    <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-6 shadow-sm">
+                        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-100 dark:border-slate-800 pb-4 mb-5">
+                            <div className="flex items-center gap-3">
+                                <div className="w-10 h-10 rounded-xl bg-blue-50 dark:bg-blue-950/50 border border-blue-200 dark:border-blue-800 flex items-center justify-center text-blue-600 dark:text-blue-400 font-bold text-sm">
+                                    <i data-lucide="share-2" className="w-5 h-5"></i>
+                                </div>
+                                <div>
+                                    <h2 className="text-base font-bold text-slate-900 dark:text-white flex items-center gap-2">
+                                        Pixels Facebook / Meta Ads
+                                        <span className="text-xs px-2 py-0.5 rounded-full bg-blue-100 dark:bg-blue-950 text-blue-700 dark:text-blue-300 font-medium">
+                                            {pixels.facebook.length}
+                                        </span>
+                                    </h2>
+                                    <p className="text-xs text-slate-500 dark:text-slate-400">Configure múltiplos pixels do Facebook com ID, Código de Conversão e Token CAPI.</p>
+                                </div>
+                            </div>
+                            <button
+                                type="button"
+                                onClick={addFacebook}
+                                className="inline-flex items-center gap-1.5 px-3.5 py-2 text-xs font-semibold rounded-lg bg-blue-50 dark:bg-blue-950/40 text-blue-700 dark:text-blue-300 hover:bg-blue-100 dark:hover:bg-blue-900/40 border border-blue-200 dark:border-blue-800 transition"
+                            >
+                                <i data-lucide="plus" className="w-3.5 h-3.5"></i>
+                                Adicionar Pixel Facebook
+                            </button>
+                        </div>
+
+                        {pixels.facebook.length === 0 ? (
+                            <div className="text-center py-8 text-slate-400 text-xs border border-dashed border-slate-200 dark:border-slate-800 rounded-xl">
+                                Nenhum pixel do Facebook cadastrado. Clique no botão acima para adicionar.
+                            </div>
+                        ) : (
+                            <div className="space-y-4">
+                                {pixels.facebook.map((fb, idx) => (
+                                    <div key={fb.id || idx} className="p-4 rounded-xl bg-slate-50 dark:bg-slate-800/40 border border-slate-200 dark:border-slate-800 space-y-3">
+                                        <div className="flex items-center justify-between border-b border-slate-200/60 dark:border-slate-700/60 pb-2">
+                                            <div className="flex items-center gap-2">
+                                                <span className="text-xs font-bold text-blue-600 dark:text-blue-400">#{idx + 1}</span>
+                                                <input
+                                                    type="text"
+                                                    value={fb.name}
+                                                    onChange={e => updateFacebook(idx, 'name', e.target.value)}
+                                                    placeholder="Nome do Pixel (Ex: Pixel Meta Principal)"
+                                                    className="text-xs font-semibold bg-transparent border-none text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-0 p-0"
+                                                />
+                                            </div>
+                                            <div className="flex items-center gap-3">
+                                                <label className="flex items-center gap-2 cursor-pointer text-xs text-slate-600 dark:text-slate-300">
+                                                    <input
+                                                        type="checkbox"
+                                                        checked={fb.active !== false}
+                                                        onChange={e => updateFacebook(idx, 'active', e.target.checked)}
+                                                        className="w-4 h-4 rounded text-blue-600 focus:ring-blue-500"
+                                                    />
+                                                    Ativo
+                                                </label>
                                                 <button
                                                     type="button"
-                                                    onClick={() => setFormPixels(formPixels.filter((_, i) => i !== idx))}
-                                                    className="p-1.5 text-[#718197] hover:text-red-500"
+                                                    onClick={() => removeFacebook(idx)}
+                                                    className="p-1.5 text-slate-400 hover:text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/40 rounded-lg transition"
+                                                    title="Remover"
                                                 >
-                                                    <Icon name="trash-2" className="w-4 h-4" />
+                                                    <i data-lucide="trash-2" className="w-4 h-4"></i>
                                                 </button>
                                             </div>
-                                        ))}
+                                        </div>
 
-                                        {formPixels.length === 0 && (
-                                            <p className="text-[11px] text-[#718197] italic py-2 text-center">Nenhum pixel adicionado. Você pode salvar a oferta e adicionar pixels depois.</p>
-                                        )}
+                                        <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                                            <div>
+                                                <label className="block text-xs font-medium text-slate-700 dark:text-slate-300 mb-1">
+                                                    ID do Pixel Facebook *
+                                                </label>
+                                                <input
+                                                    type="text"
+                                                    value={fb.pixelId}
+                                                    onChange={e => updateFacebook(idx, 'pixelId', e.target.value)}
+                                                    placeholder="Ex: 1392443726166280"
+                                                    className="w-full text-xs px-3 py-2 rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-900 dark:text-white font-mono focus:ring-2 focus:ring-blue-500 focus:outline-none"
+                                                />
+                                            </div>
+                                            <div>
+                                                <label className="block text-xs font-medium text-slate-700 dark:text-slate-300 mb-1">
+                                                    Código / Script do Evento
+                                                </label>
+                                                <input
+                                                    type="text"
+                                                    value={fb.code}
+                                                    onChange={e => updateFacebook(idx, 'code', e.target.value)}
+                                                    placeholder="Ex: fbq('track', 'PageView');"
+                                                    className="w-full text-xs px-3 py-2 rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-900 dark:text-white font-mono focus:ring-2 focus:ring-blue-500 focus:outline-none"
+                                                />
+                                            </div>
+                                            <div>
+                                                <label className="block text-xs font-medium text-slate-700 dark:text-slate-300 mb-1">
+                                                    Token de Acesso / API de Conversões (CAPI)
+                                                </label>
+                                                <input
+                                                    type="text"
+                                                    value={fb.token}
+                                                    onChange={e => updateFacebook(idx, 'token', e.target.value)}
+                                                    placeholder="Ex: EAABsbCS..."
+                                                    className="w-full text-xs px-3 py-2 rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-900 dark:text-white font-mono focus:ring-2 focus:ring-blue-500 focus:outline-none"
+                                                />
+                                            </div>
+                                        </div>
                                     </div>
-                                </div>
+                                ))}
+                            </div>
+                        )}
+                    </div>
 
-                                <div className="pt-3 border-t border-[#e2e9f0] dark:border-[#1e2d42] flex justify-end">
-                                    <button
-                                        type="submit"
-                                        disabled={saving}
-                                        className="px-6 py-2.5 rounded-xl bg-[#00a86b] hover:bg-[#00915c] text-white font-bold text-xs shadow-md transition-all flex items-center gap-1.5"
-                                    >
-                                        <Icon name="check" className="w-3.5 h-3.5" />
-                                        <span>{saving ? 'Salvando...' : 'Salvar oferta'}</span>
-                                    </button>
+                    {/* 3. TikTok Ads Section */}
+                    <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-6 shadow-sm">
+                        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-100 dark:border-slate-800 pb-4 mb-5">
+                            <div className="flex items-center gap-3">
+                                <div className="w-10 h-10 rounded-xl bg-cyan-50 dark:bg-cyan-950/50 border border-cyan-200 dark:border-cyan-800 flex items-center justify-center text-cyan-600 dark:text-cyan-400 font-bold text-sm">
+                                    <i data-lucide="video" className="w-5 h-5"></i>
                                 </div>
-                            </form>
+                                <div>
+                                    <h2 className="text-base font-bold text-slate-900 dark:text-white flex items-center gap-2">
+                                        Pixels TikTok Ads
+                                        <span className="text-xs px-2 py-0.5 rounded-full bg-cyan-100 dark:bg-cyan-950 text-cyan-700 dark:text-cyan-300 font-medium">
+                                            {pixels.tiktok.length}
+                                        </span>
+                                    </h2>
+                                    <p className="text-xs text-slate-500 dark:text-slate-400">Configure múltiplos pixels do TikTok com ID, Código de Evento e Token de API.</p>
+                                </div>
+                            </div>
+                            <button
+                                type="button"
+                                onClick={addTikTok}
+                                className="inline-flex items-center gap-1.5 px-3.5 py-2 text-xs font-semibold rounded-lg bg-cyan-50 dark:bg-cyan-950/40 text-cyan-700 dark:text-cyan-300 hover:bg-cyan-100 dark:hover:bg-cyan-900/40 border border-cyan-200 dark:border-cyan-800 transition"
+                            >
+                                <i data-lucide="plus" className="w-3.5 h-3.5"></i>
+                                Adicionar Pixel TikTok
+                            </button>
                         </div>
+
+                        {pixels.tiktok.length === 0 ? (
+                            <div className="text-center py-8 text-slate-400 text-xs border border-dashed border-slate-200 dark:border-slate-800 rounded-xl">
+                                Nenhum pixel do TikTok cadastrado. Clique no botão acima para adicionar.
+                            </div>
+                        ) : (
+                            <div className="space-y-4">
+                                {pixels.tiktok.map((tt, idx) => (
+                                    <div key={tt.id || idx} className="p-4 rounded-xl bg-slate-50 dark:bg-slate-800/40 border border-slate-200 dark:border-slate-800 space-y-3">
+                                        <div className="flex items-center justify-between border-b border-slate-200/60 dark:border-slate-700/60 pb-2">
+                                            <div className="flex items-center gap-2">
+                                                <span className="text-xs font-bold text-cyan-600 dark:text-cyan-400">#{idx + 1}</span>
+                                                <input
+                                                    type="text"
+                                                    value={tt.name}
+                                                    onChange={e => updateTikTok(idx, 'name', e.target.value)}
+                                                    placeholder="Nome do Pixel (Ex: Pixel TikTok Principal)"
+                                                    className="text-xs font-semibold bg-transparent border-none text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-0 p-0"
+                                                />
+                                            </div>
+                                            <div className="flex items-center gap-3">
+                                                <label className="flex items-center gap-2 cursor-pointer text-xs text-slate-600 dark:text-slate-300">
+                                                    <input
+                                                        type="checkbox"
+                                                        checked={tt.active !== false}
+                                                        onChange={e => updateTikTok(idx, 'active', e.target.checked)}
+                                                        className="w-4 h-4 rounded text-cyan-600 focus:ring-cyan-500"
+                                                    />
+                                                    Ativo
+                                                </label>
+                                                <button
+                                                    type="button"
+                                                    onClick={() => removeTikTok(idx)}
+                                                    className="p-1.5 text-slate-400 hover:text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/40 rounded-lg transition"
+                                                    title="Remover"
+                                                >
+                                                    <i data-lucide="trash-2" className="w-4 h-4"></i>
+                                                </button>
+                                            </div>
+                                        </div>
+
+                                        <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                                            <div>
+                                                <label className="block text-xs font-medium text-slate-700 dark:text-slate-300 mb-1">
+                                                    ID do Pixel TikTok *
+                                                </label>
+                                                <input
+                                                    type="text"
+                                                    value={tt.pixelId}
+                                                    onChange={e => updateTikTok(idx, 'pixelId', e.target.value)}
+                                                    placeholder="Ex: DA9IHQBC77UBPDTVJ18G"
+                                                    className="w-full text-xs px-3 py-2 rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-900 dark:text-white font-mono focus:ring-2 focus:ring-cyan-500 focus:outline-none"
+                                                />
+                                            </div>
+                                            <div>
+                                                <label className="block text-xs font-medium text-slate-700 dark:text-slate-300 mb-1">
+                                                    Código / Script do Evento
+                                                </label>
+                                                <input
+                                                    type="text"
+                                                    value={tt.code}
+                                                    onChange={e => updateTikTok(idx, 'code', e.target.value)}
+                                                    placeholder="Ex: ttq.track('CompletePayment');"
+                                                    className="w-full text-xs px-3 py-2 rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-900 dark:text-white font-mono focus:ring-2 focus:ring-cyan-500 focus:outline-none"
+                                                />
+                                            </div>
+                                            <div>
+                                                <label className="block text-xs font-medium text-slate-700 dark:text-slate-300 mb-1">
+                                                    Token de Acesso / API de Eventos
+                                                </label>
+                                                <input
+                                                    type="text"
+                                                    value={tt.token}
+                                                    onChange={e => updateTikTok(idx, 'token', e.target.value)}
+                                                    placeholder="Ex: tt_token_..."
+                                                    className="w-full text-xs px-3 py-2 rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-900 dark:text-white font-mono focus:ring-2 focus:ring-cyan-500 focus:outline-none"
+                                                />
+                                            </div>
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
+                        )}
+                    </div>
+
+                    {/* Bottom Save Bar */}
+                    <div className="sticky bottom-4 z-20 p-4 rounded-2xl bg-white/90 dark:bg-slate-900/90 backdrop-blur-md border border-slate-200 dark:border-slate-800 shadow-xl flex flex-col sm:flex-row items-center justify-between gap-4">
+                        <div className="text-xs text-slate-500 dark:text-slate-400">
+                            Ao clicar em salvar, todos os pixels ativos serão atualizados e aplicados imediatamente em <strong>todas as páginas do site</strong>.
+                        </div>
+                        <button
+                            type="button"
+                            onClick={handleSave}
+                            disabled={saving}
+                            className="w-full sm:w-auto px-8 py-3 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-sm shadow-lg shadow-emerald-600/30 transition flex items-center justify-center gap-2 shrink-0 disabled:opacity-50"
+                        >
+                            {saving ? (
+                                <>
+                                    <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                                    Salvando alterações...
+                                </>
+                            ) : (
+                                <>
+                                    <i data-lucide="check" className="w-4 h-4"></i>
+                                    Salvar todos os pixels
+                                </>
+                            )}
+                        </button>
                     </div>
                 </div>
             );
         }
+
 
         // --- 4. ORDERS VIEW ---
         function OrdersView() {

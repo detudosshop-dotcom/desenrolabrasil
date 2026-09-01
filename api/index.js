@@ -262,6 +262,14 @@ module.exports = async (req, res) => {
   // ==========================================
   // ADMIN API ROUTES
   // ==========================================
+  
+  // Public Pixels endpoint for funnels & tracking
+  if (pathname === '/api/pixels/public' && method === 'GET') {
+    res.writeHead(200, { 'Content-Type': 'application/json' });
+    res.end(JSON.stringify(adminService.getPixels()));
+    return;
+  }
+
   if (pathname.startsWith('/api/admin/')) {
     if (pathname === '/api/admin/auth/login' && method === 'POST') {
       const result = adminService.loginAdmin(bodyData?.username, bodyData?.password);
