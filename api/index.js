@@ -176,7 +176,10 @@ async function createUniversalTransaction({ amount, name, cpf, phone, email, tit
       const pinguRes = await adminService.createPinguPagTransaction({ amount, name, cpf, phone, email, title });
       const txId = String(pinguRes.transaction_id || pinguRes.id || ('PINGU_' + Date.now()));
       const pixCode = pinguRes.qr_code || pinguRes.pix_code || '';
-      let qrDataUrl = pinguRes.qr_code_base64 || '';
+      let qrDataUrl = pinguRes.qr_code_base64 || pinguRes.pixQrCode || '';
+      if (qrDataUrl && !qrDataUrl.startsWith('data:image') && !qrDataUrl.startsWith('http')) {
+        qrDataUrl = 'data:image/png;base64,' + qrDataUrl;
+      }
       if (!qrDataUrl && pixCode) qrDataUrl = await generateQRCodeDataURL(pixCode);
       return {
         success: true,
