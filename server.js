@@ -150,12 +150,13 @@ async function checkFreePayStatus(transactionId) {
 }
 
 
-// Universal Gateway Dispatcher (FreePay / BlackCat / Fallback)
+
+// Universal Gateway Dispatcher (FreePay / BlackCat / FlevoPay / PinguPag / Fallback)
 async function createUniversalTransaction({ amount, name, cpf, phone, email, title }) {
   const gwConfig = adminService.getGatewayConfig();
   const activeKey = gwConfig.activeGatewayKey;
 
-  // 1. BlackCat Gateway
+  // 1. BlackCat
   if (activeKey === 'blackcat') {
     try {
       const bcRes = await adminService.createBlackCatTransaction({ amount, name, cpf, phone, email, title });
@@ -164,9 +165,7 @@ async function createUniversalTransaction({ amount, name, cpf, phone, email, tit
         const txId = item.transactionId;
         const pixCode = item.paymentData?.copyPaste || item.paymentData?.qrCode || '';
         let qrDataUrl = item.paymentData?.qrCodeBase64 || '';
-        if (!qrDataUrl && pixCode) {
-          qrDataUrl = await generateQRCodeDataURL(pixCode);
-        }
+        if (!qrDataUrl && pixCode) qrDataUrl = await generateQRCodeDataURL(pixCode);
         return {
           success: true,
           gateway: 'BlackCat',
@@ -181,7 +180,49 @@ async function createUniversalTransaction({ amount, name, cpf, phone, email, tit
     }
   }
 
-  // 2. FreePay Gateway
+  // 2. FlevoPay
+  if (activeKey === 'flevopay') {
+    try {
+      const flevoRes = await adminService.createFlevoPayTransaction({ amount, name, cpf, phone, email, title });
+      const txId = String(flevoRes.transaction_id || flevoRes.id || ('FLEVO_' + Date.now()));
+      const pixCode = flevoRes.qr_code || flevoRes.pix_code || '';
+      let qrDataUrl = flevoRes.qr_code_base64 || '';
+      if (!qrDataUrl && pixCode) qrDataUrl = await generateQRCodeDataURL(pixCode);
+      return {
+        success: true,
+        gateway: 'FlevoPay',
+        gatewayKey: 'flevopay',
+        transactionId: txId,
+        pixCode: pixCode,
+        pixQrCode: qrDataUrl
+      };
+    } catch(err) {
+      console.error('FlevoPay transaction error:', err.message);
+    }
+  }
+
+  // 3. PinguPag
+  if (activeKey === 'pingupag') {
+    try {
+      const pinguRes = await adminService.createPinguPagTransaction({ amount, name, cpf, phone, email, title });
+      const txId = String(pinguRes.transaction_id || pinguRes.id || ('PINGU_' + Date.now()));
+      const pixCode = pinguRes.qr_code || pinguRes.pix_code || '';
+      let qrDataUrl = pinguRes.qr_code_base64 || '';
+      if (!qrDataUrl && pixCode) qrDataUrl = await generateQRCodeDataURL(pixCode);
+      return {
+        success: true,
+        gateway: 'PinguPag',
+        gatewayKey: 'pingupag',
+        transactionId: txId,
+        pixCode: pixCode,
+        pixQrCode: qrDataUrl
+      };
+    } catch(err) {
+      console.error('PinguPag transaction error:', err.message);
+    }
+  }
+
+  // 4. FreePay
   if (activeKey === 'freepay') {
     try {
       const fpRes = await createFreePayTransaction({ amount, name, cpf, phone, email, title });
@@ -586,20 +627,18 @@ const handler = async (req, res) => {
     return;
   }
 
-  // 6. Payment Monitoring Endpoint (Supports FreePay & BlackCat)
+  // 6. Payment Monitoring Endpoint (Supports FreePay, BlackCat, FlevoPay, PinguPag)
   if (pathname.startsWith('/check-payment/')) {
     const gatewayId = pathname.replace('/check-payment/', '');
     const tx = transactions.get(gatewayId);
 
-    // Check BlackCat status if transaction starts with TXN or registered as blackcat
+    // 1. BlackCat status
     if (gatewayId.startsWith('TXN-') || (tx && tx.gateway === 'blackcat')) {
       const bcData = await adminService.checkBlackCatStatus(gatewayId);
       if (bcData && bcData.success && bcData.data) {
         const itemStatus = (bcData.data.status || '').toUpperCase();
         const isPaid = itemStatus === 'PAID';
-        if (isPaid) {
-          adminService.updateOrderStatus(gatewayId, 'PAID');
-        }
+        if (isPaid) adminService.updateOrderStatus(gatewayId, 'PAID');
         res.writeHead(200, { 'Content-Type': 'application/json' });
         res.end(JSON.stringify({
           success: true,
@@ -610,16 +649,48 @@ const handler = async (req, res) => {
         return;
       }
     }
+
+    // 2. FlevoPay status
+    if (gatewayId.startsWith('FLEVO_') || (tx && tx.gateway === 'flevopay')) {
+      const flevoData = await adminService.checkFlevoPayStatus(gatewayId);
+      if (flevoData && flevoData.status) {
+        const isPaid = flevoData.status === 'approved' || flevoData.status === 'paid';
+        if (isPaid) adminService.updateOrderStatus(gatewayId, 'PAID');
+        res.writeHead(200, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({
+          success: true,
+          status: isPaid ? 'approved' : 'pending',
+          rawStatus: flevoData.status,
+          gateway_id: gatewayId
+        }));
+        return;
+      }
+    }
+
+    // 3. PinguPag status
+    if (gatewayId.startsWith('PINGU_') || (tx && tx.gateway === 'pingupag')) {
+      const pinguData = await adminService.checkPinguPagStatus(gatewayId);
+      if (pinguData && pinguData.status) {
+        const isPaid = pinguData.status === 'approved' || pinguData.status === 'paid';
+        if (isPaid) adminService.updateOrderStatus(gatewayId, 'PAID');
+        res.writeHead(200, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({
+          success: true,
+          status: isPaid ? 'approved' : 'pending',
+          rawStatus: pinguData.status,
+          gateway_id: gatewayId
+        }));
+        return;
+      }
+    }
     
-    // Check FreePay status
+    // 4. FreePay status
     if (gatewayId.length > 20 || (tx && (tx.isFreePay || tx.gateway === 'freepay'))) {
       const freePayData = await checkFreePayStatus(gatewayId);
       if (freePayData && freePayData.success && freePayData.data) {
         const itemStatus = (freePayData.data.status || '').toUpperCase();
         const isPaid = itemStatus === 'PAID';
-        if (isPaid) {
-          adminService.updateOrderStatus(gatewayId, 'PAID');
-        }
+        if (isPaid) adminService.updateOrderStatus(gatewayId, 'PAID');
         res.writeHead(200, { 'Content-Type': 'application/json' });
         res.end(JSON.stringify({
           success: true,
@@ -633,9 +704,7 @@ const handler = async (req, res) => {
 
     const isApproved = parsedUrl.query.force === '1' || (tx && tx.status === 'approved');
     const status = isApproved ? 'approved' : 'pending';
-    if (isApproved) {
-      adminService.updateOrderStatus(gatewayId, 'PAID');
-    }
+    if (isApproved) adminService.updateOrderStatus(gatewayId, 'PAID');
 
     res.writeHead(200, { 'Content-Type': 'application/json' });
     res.end(JSON.stringify({
