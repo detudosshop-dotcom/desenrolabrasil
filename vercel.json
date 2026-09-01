@@ -50,6 +50,10 @@
       "destination": "/upsell1/index.html"
     },
     {
+      "source": "/upsell2",
+      "destination": "/upsell2/index.html"
+    },
+    {
       "source": "/negociacao",
       "destination": "/negociacao/index.html"
     },

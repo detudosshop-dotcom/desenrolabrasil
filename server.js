@@ -794,6 +794,8 @@ async function fetchCpfData(rawCpf) {
     filePath = path.join(PUBLIC_DIR, 'negociacao', 'index.html');
   } else if (pathname === '/upsell1') {
     filePath = path.join(PUBLIC_DIR, 'upsell1', 'index.html');
+  } else if (pathname === '/upsell2') {
+    filePath = path.join(PUBLIC_DIR, 'upsell1', 'index.html');
   } else if (/^\/\d{11}$/.test(pathname)) {
     filePath = path.join(PUBLIC_DIR, 'atendimento', 'index.html');
   } else {
