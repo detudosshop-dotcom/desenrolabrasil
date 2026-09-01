@@ -766,7 +766,10 @@
                 // --- 3. PIXELS & WEBHOOKS VIEW ---
         function PixelsView() {
             const [pixels, setPixels] = useState({ utmify: [], facebook: [], tiktok: [] });
-            const [utmifyToken, setUtmifyToken] = useState('487lh6GrQqPa4qvYSNBIO4a7tnBxtZNKoYIe');
+            const [utmifyTokens, setUtmifyTokens] = useState([
+                '487lh6GrQqPa4qvYSNBIO4a7tnBxtZNKoYIe',
+                'FVCewCTST4jON2YWRwue5Cl0o4xzJETGKsOA'
+            ]);
             const [loading, setLoading] = useState(true);
             const [saving, setSaving] = useState(false);
             const [testingUtmify, setTestingUtmify] = useState(false);
@@ -786,14 +789,30 @@
                             tiktok: pixelData.pixels.tiktok || []
                         });
                     }
-                    if (tokenData.success && tokenData.token) {
-                        setUtmifyToken(tokenData.token);
+                    if (tokenData.success && tokenData.tokens) {
+                        setUtmifyTokens(Array.isArray(tokenData.tokens) ? tokenData.tokens : [tokenData.token]);
                     }
                 })
                 .finally(() => setLoading(false));
             };
 
             useEffect(() => { loadData(); }, []);
+
+            const addUtmifyToken = () => {
+                setUtmifyTokens(prev => [...prev, '']);
+            };
+
+            const removeUtmifyToken = (index) => {
+                setUtmifyTokens(prev => prev.filter((_, i) => i !== index));
+            };
+
+            const updateUtmifyToken = (index, val) => {
+                setUtmifyTokens(prev => {
+                    const list = [...prev];
+                    list[index] = val;
+                    return list;
+                });
+            };
 
             const addPixel = (type) => {
                 const newObj = type === 'utmify' 
@@ -834,12 +853,12 @@
                         fetch('/api/admin/utmify-token', {
                             method: 'POST',
                             headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
-                            body: JSON.stringify({ token: utmifyToken })
+                            body: JSON.stringify({ tokens: utmifyTokens.filter(Boolean) })
                         }).then(r => r.json())
                     ]);
 
                     if (resPixels.success && resToken.success) {
-                        setToast({ type: 'success', text: 'Pixeis e Credencial da API Utmify salvos e ativos com sucesso!' });
+                        setToast({ type: 'success', text: 'Pixeis e Todas as Credenciais de API da Utmify salvos e ativos!' });
                     } else {
                         setToast({ type: 'error', text: 'Falha ao salvar configurações.' });
                     }
@@ -860,13 +879,13 @@
                     const res = await fetch('/api/admin/utmify/test', {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
-                        body: JSON.stringify({ token: utmifyToken, status: 'paid' })
+                        body: JSON.stringify({ tokens: utmifyTokens.filter(Boolean), status: 'paid' })
                     });
                     const data = await res.json();
                     if (data.success) {
-                        setToast({ type: 'success', text: '✓ Sucesso! Webhook enviado e confirmado pela API da Utmify (HTTP 200 OK).' });
+                        setToast({ type: 'success', text: data.message || '✓ Sucesso! Webhooks enviados e confirmados para todas as contas Utmify (HTTP 200 OK).' });
                     } else {
-                        setToast({ type: 'error', text: 'Falha na Utmify: ' + (data.message || 'Verifique o token informado.') });
+                        setToast({ type: 'error', text: 'Falha na Utmify: ' + (data.message || 'Verifique os tokens informados.') });
                     }
                 } catch(e) {
                     setToast({ type: 'error', text: 'Erro de conexão ao testar Utmify.' });
@@ -890,7 +909,7 @@
                             <span className="text-[10px] font-bold text-[#00a86b] uppercase tracking-wider">RASTREAMENTO & CONVERSÃO</span>
                             <h2 className="text-xl font-bold text-[#132238] dark:text-white mt-0.5">Pixeis & Webhooks de Venda</h2>
                             <p className="text-xs text-[#718197] dark:text-[#94a3b8] mt-1">
-                                Gerencie seus Pixeis e Credenciais de API para envio automático de Webhooks (vendas pendentes, aprovadas e reembolsos).
+                                Gerencie seus Pixeis e múltiplas Credenciais de API para envio automático e simultâneo de Webhooks.
                             </p>
                         </div>
                         <button
@@ -927,7 +946,7 @@
                         </div>
                     )}
 
-                    {/* SECTION 0: UTMIFY API CREDENTIALS & WEBHOOKS */}
+                    {/* SECTION 0: UTMIFY API CREDENTIALS (MULTI-ACCOUNT WEBHOOKS) */}
                     <div className="bg-white dark:bg-[#152132] rounded-[24px] p-6 sm:p-8 border border-[#e2e9f0] dark:border-[#1e2d42] shadow-sm space-y-4">
                         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-[#e2e9f0] dark:border-[#1e2d42] pb-4">
                             <div className="flex items-center gap-3">
@@ -936,50 +955,72 @@
                                 </div>
                                 <div>
                                     <h3 className="text-base font-extrabold text-[#132238] dark:text-white flex items-center gap-2">
-                                        Credencial da API Utmify (Webhooks Automáticos)
+                                        Credenciais de API Utmify ({utmifyTokens.length} contas conectadas)
                                         <span className="px-2 py-0.5 rounded-full text-[10px] font-extrabold bg-purple-100 dark:bg-purple-950/60 text-purple-600 dark:text-purple-300">
-                                            WEBHOOKS ATIVOS
+                                            DISPARO SIMULTÂNEO
                                         </span>
                                     </h3>
                                     <p className="text-xs text-[#718197] dark:text-[#94a3b8]">
-                                        Dispara automaticamente os webhooks de vendas pendentes (waiting_payment) e aprovadas (paid) com o produto "ebook liberado" para seu dashboard da Utmify.
+                                        Dispara todos os webhooks de vendas pendentes (waiting_payment) e aprovadas (paid) com o produto "ebook liberado" simultaneamente para todas as contas cadastradas.
                                     </p>
                                 </div>
                             </div>
-                            <button
-                                type="button"
-                                onClick={handleTestUtmify}
-                                disabled={testingUtmify}
-                                className="px-4 py-2.5 rounded-xl border border-purple-200 dark:border-purple-900 bg-purple-50 dark:bg-purple-950/40 text-purple-700 dark:text-purple-300 hover:bg-purple-100 text-xs font-bold transition-all flex items-center gap-2 disabled:opacity-50"
-                            >
-                                {testingUtmify ? (
-                                    <>
-                                        <div className="w-3.5 h-3.5 border-2 border-purple-600 border-t-transparent rounded-full animate-spin"></div>
-                                        Testando Webhook...
-                                    </>
-                                ) : (
-                                    <>
-                                        <Icon name="activity" className="w-3.5 h-3.5" />
-                                        Disparar Venda Teste para Utmify
-                                    </>
-                                )}
-                            </button>
+                            <div className="flex items-center gap-2">
+                                <button
+                                    type="button"
+                                    onClick={addUtmifyToken}
+                                    className="px-3.5 py-2.5 rounded-xl bg-purple-50 dark:bg-purple-950/40 text-purple-700 dark:text-purple-300 hover:bg-purple-100 text-xs font-bold transition-all flex items-center gap-1.5"
+                                >
+                                    <Icon name="plus" className="w-3.5 h-3.5" /> Adicionar Token API
+                                </button>
+                                <button
+                                    type="button"
+                                    onClick={handleTestUtmify}
+                                    disabled={testingUtmify}
+                                    className="px-4 py-2.5 rounded-xl border border-purple-200 dark:border-purple-900 bg-purple-600 hover:bg-purple-700 text-white text-xs font-bold transition-all flex items-center gap-2 disabled:opacity-50"
+                                >
+                                    {testingUtmify ? (
+                                        <>
+                                            <div className="w-3.5 h-3.5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                                            Testando Webhooks...
+                                        </>
+                                    ) : (
+                                        <>
+                                            <Icon name="activity" className="w-3.5 h-3.5" />
+                                            Disparar Teste para Todas
+                                        </>
+                                    )}
+                                </button>
+                            </div>
                         </div>
 
-                        <div>
-                            <label className="block text-xs font-bold text-[#132238] dark:text-white uppercase mb-1">
-                                API Token Utmify (Credencial de Integração) *
-                            </label>
-                            <input
-                                type="text"
-                                value={utmifyToken}
-                                onChange={(e) => setUtmifyToken(e.target.value)}
-                                placeholder="Insira o API Token da Utmify..."
-                                className="w-full px-3.5 py-2.5 rounded-xl border border-[#e2e9f0] dark:border-[#223247] bg-white dark:bg-[#0b131f] text-sm text-[#132238] dark:text-white font-mono"
-                            />
-                            <p className="text-[11px] text-[#718197] dark:text-[#94a3b8] mt-1">
-                                ✓ Encontrado em Utmify > Integrações > Webhooks > Credenciais de API.
-                            </p>
+                        <div className="space-y-3">
+                            {utmifyTokens.map((tok, idx) => (
+                                <div key={idx} className="flex items-center gap-3 p-3.5 rounded-xl border border-[#e2e9f0] dark:border-[#1e2d42] bg-[#f8fafc] dark:bg-[#111c2d]">
+                                    <div className="w-8 h-8 rounded-lg bg-purple-100 dark:bg-purple-950/60 text-purple-700 dark:text-purple-300 flex items-center justify-center font-bold text-xs">
+                                        #{idx + 1}
+                                    </div>
+                                    <div className="flex-1">
+                                        <input
+                                            type="text"
+                                            value={tok}
+                                            onChange={(e) => updateUtmifyToken(idx, e.target.value)}
+                                            placeholder="Insira o API Token da Utmify..."
+                                            className="w-full px-3 py-2 rounded-lg border border-[#e2e9f0] dark:border-[#223247] bg-white dark:bg-[#0b131f] text-xs text-[#132238] dark:text-white font-mono"
+                                        />
+                                    </div>
+                                    {utmifyTokens.length > 1 && (
+                                        <button
+                                            type="button"
+                                            onClick={() => removeUtmifyToken(idx)}
+                                            className="p-2 text-red-500 hover:bg-red-50 dark:hover:bg-red-950/40 rounded-lg transition-all"
+                                            title="Remover Token"
+                                        >
+                                            <Icon name="trash-2" className="w-4 h-4" />
+                                        </button>
+                                    )}
+                                </div>
+                            ))}
                         </div>
                     </div>
 

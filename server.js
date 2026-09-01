@@ -455,16 +455,16 @@ const handler = async (req, res) => {
     }
 
     // 8. Metrics & Retention
-    // 9. Utmify API Token & Test
+    // 9. Utmify API Tokens & Multi-Account Test
     if (pathname === '/api/admin/utmify-token' && method === 'GET') {
       res.writeHead(200, { 'Content-Type': 'application/json' });
-      res.end(JSON.stringify({ success: true, token: adminService.getUtmifyApiToken() }));
+      res.end(JSON.stringify({ success: true, tokens: adminService.getUtmifyApiTokens() }));
       return;
     }
 
     if (pathname === '/api/admin/utmify-token' && method === 'POST') {
       const body = await readJsonBody();
-      const result = adminService.updateUtmifyApiToken(body.token);
+      const result = adminService.updateUtmifyApiTokens(body.tokens || body.token);
       res.writeHead(200, { 'Content-Type': 'application/json' });
       res.end(JSON.stringify(result));
       return;
@@ -472,13 +472,13 @@ const handler = async (req, res) => {
 
     if (pathname === '/api/admin/utmify/test' && method === 'POST') {
       const body = await readJsonBody();
-      if (body.token) adminService.updateUtmifyApiToken(body.token);
+      if (body.tokens || body.token) adminService.updateUtmifyApiTokens(body.tokens || body.token);
       const testRes = await adminService.sendUtmifyOrderWebhook({
         orderId: 'TEST_ADM_' + Date.now(),
         status: body.status || 'paid',
         amount: 68.92,
         customer: {
-          name: 'Teste Painel Admin',
+          name: 'Teste Multi-Token Utmify',
           email: 'teste@cliente.com',
           document: '08072703188',
           phone: '11999999999'
@@ -489,8 +489,8 @@ const handler = async (req, res) => {
       res.writeHead(200, { 'Content-Type': 'application/json' });
       res.end(JSON.stringify({
         success: testRes.success,
-        data: testRes.data,
-        message: testRes.success ? 'Webhook disparado e validado com sucesso pela Utmify (HTTP 200)!' : (testRes.error || 'Falha ao validar com a Utmify')
+        details: testRes,
+        message: testRes.success ? (`✓ Sucesso! Webhook enviado e validado para ` + testRes.successfulCount + ` conta(s) Utmify (HTTP 200 OK).`) : 'Falha ao validar com a Utmify'
       }));
       return;
     }
