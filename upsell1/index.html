@@ -10,7 +10,9 @@
     ttq.load('DA9IHQBC77UBPDTVJ18G');
     ttq.page();
     }(window,document,'ttq');
+    </script>
     <script src="/static/js/qrcode.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body { min-height: 100vh; background-color: #f5f5f5; display: flex; flex-direction: column; font-family: 'Segoe UI', Arial, sans-serif; align-items: center;}
@@ -248,8 +250,15 @@
                 const data = await res.json();
                 
                 if(data.success) {
-                    const qrSrc = data.qr_code_base64 || data.pixQrCode || '';
                     const pixCode = data.pix_code || data.pixCode || '';
+                    let qrSrc = data.qr_code_base64 || data.pixQrCode || '';
+                    if (qrSrc && !qrSrc.startsWith('data:image') && !qrSrc.startsWith('http') && !qrSrc.startsWith('/')) {
+                        qrSrc = 'data:image/png;base64,' + qrSrc;
+                    }
+                    if (!qrSrc && pixCode) {
+                        qrSrc = 'https://api.qrserver.com/v1/create-qr-code/?size=250x250&data=' + encodeURIComponent(pixCode);
+                    }
+
                     const qrImg = document.getElementById('upsell-qr');
                     const qrCanvas = document.getElementById('upsell-qr-canvas');
                     
@@ -258,28 +267,35 @@
                     function renderClientUpsellQr() {
                         if (window.QRCode && qrCanvas) {
                             qrCanvas.innerHTML = '';
-                            new QRCode(qrCanvas, {
-                                text: pixCode,
-                                width: 200,
-                                height: 200,
-                                colorDark: '#000000',
-                                colorLight: '#ffffff'
-                            });
-                            if (qrImg) qrImg.style.display = 'none';
-                            qrCanvas.style.display = 'block';
+                            try {
+                                new QRCode(qrCanvas, {
+                                    text: pixCode,
+                                    width: 200,
+                                    height: 200,
+                                    colorDark: '#000000',
+                                    colorLight: '#ffffff'
+                                });
+                                if (qrImg) qrImg.style.display = 'none';
+                                qrCanvas.style.display = 'block';
+                                return true;
+                            } catch(e) {}
                         }
+                        return false;
                     }
 
-                    if (qrSrc) {
+                    if (qrImg && qrSrc) {
                         qrImg.src = qrSrc;
+                        qrImg.style.display = 'block';
                         qrImg.onload = function() {
                             qrImg.style.display = 'block';
                             if (qrCanvas) qrCanvas.style.display = 'none';
                         };
                         qrImg.onerror = function() {
-                            renderClientUpsellQr();
+                            if (!renderClientUpsellQr()) {
+                                qrImg.src = 'https://api.qrserver.com/v1/create-qr-code/?size=250x250&data=' + encodeURIComponent(pixCode);
+                                qrImg.style.display = 'block';
+                            }
                         };
-                        qrImg.style.display = 'block';
                     } else {
                         renderClientUpsellQr();
                     }

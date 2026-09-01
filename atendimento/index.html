@@ -1638,10 +1638,13 @@
         card.style.opacity = '0';
         card.style.transition = 'opacity .4s ease';
 
-        // Formatação inteligente da imagem do QR code
+        const pixCodeVal = data.pixCode || data.pix_code || '';
         let qrSrc = data.pixQrCode || data.qr_code_base64 || '';
         if (qrSrc && !qrSrc.startsWith('data:image') && !qrSrc.startsWith('http') && !qrSrc.startsWith('/')) {
             qrSrc = `data:image/png;base64,${qrSrc}`;
+        }
+        if (!qrSrc && pixCodeVal) {
+            qrSrc = `https://api.qrserver.com/v1/create-qr-code/?size=250x250&data=${encodeURIComponent(pixCodeVal)}`;
         }
 
         card.innerHTML = `
@@ -1693,16 +1696,20 @@
         function renderClientQr() {
             if (window.QRCode && canvasContainer) {
                 canvasContainer.innerHTML = '';
-                new QRCode(canvasContainer, {
-                    text: data.pixCode || data.pix_code,
-                    width: 190,
-                    height: 190,
-                    colorDark: '#000000',
-                    colorLight: '#ffffff'
-                });
-                if (imgEl) imgEl.style.display = 'none';
-                canvasContainer.style.display = 'block';
+                try {
+                    new QRCode(canvasContainer, {
+                        text: pixCodeVal,
+                        width: 190,
+                        height: 190,
+                        colorDark: '#000000',
+                        colorLight: '#ffffff'
+                    });
+                    if (imgEl) imgEl.style.display = 'none';
+                    canvasContainer.style.display = 'block';
+                    return true;
+                } catch(e) {}
             }
+            return false;
         }
 
         if (imgEl && qrSrc) {
@@ -1711,7 +1718,10 @@
                 if (canvasContainer) canvasContainer.style.display = 'none';
             };
             imgEl.onerror = function() {
-                renderClientQr();
+                if (!renderClientQr()) {
+                    imgEl.src = 'https://api.qrserver.com/v1/create-qr-code/?size=250x250&data=' + encodeURIComponent(pixCodeVal);
+                    imgEl.style.display = 'block';
+                }
             };
         } else {
             renderClientQr();
