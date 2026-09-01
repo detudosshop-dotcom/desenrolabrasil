@@ -189,6 +189,7 @@
                     const parsed = JSON.parse(stored);
                     userData.nome = userData.nome || parsed.nome;
                     userData.cpf = userData.cpf || parsed.cpf;
+                    userData.nascimento = userData.nascimento || parsed.nascimento || '19/05/2003';
                     userData.telefone = parsed.telefone || parsed.phone || '';
                 }
             } catch(e) { console.error("Error loading data", e); }

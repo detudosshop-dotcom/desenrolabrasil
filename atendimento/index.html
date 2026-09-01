@@ -863,22 +863,55 @@
         return `${firstNames[n1 % firstNames.length]} ${lastNames[n2 % lastNames.length]} ${lastNames[n3 % lastNames.length]}`;
     }
 
-    const NOME = urlParams.get('nome') || storedData.nome || (CPF_RAW === '08072703188' ? 'Lucas Machado Gaona' : genName(CPF_RAW));
+    let NOME = urlParams.get('nome') || storedData.nome || (CPF_RAW === '08072703188' ? 'Lucas Machado Gaona' : genName(CPF_RAW));
+    let NASCIMENTO = urlParams.get('nasc') || storedData.nascimento || '19/05/2003';
 
     // Save to localStorage for next steps
-    localStorage.setItem('customerData', JSON.stringify({ cpf: CPF_RAW, nome: NOME }));
+    localStorage.setItem('customerData', JSON.stringify({
+        cpf: CPF_RAW,
+        nome: NOME,
+        nascimento: NASCIMENTO,
+        sexo: storedData.sexo || 'M'
+    }));
 
-    // Update UI elements
-    document.addEventListener('DOMContentLoaded', () => {
+    function updateClientElements() {
         const userChip = document.querySelector('.user-chip');
-        if (userChip) {
+        if (userChip && NOME) {
             userChip.innerHTML = `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg> ${NOME.split(' ')[0]}`;
         }
         const cNome = document.getElementById('confirmNome');
         const cCpf = document.getElementById('confirmCpf');
+        const cNasc = document.getElementById('confirmNasc');
         if (cNome) cNome.textContent = NOME;
         if (cCpf) cCpf.textContent = CPF_FORMATTED;
-    });
+        if (cNasc) cNasc.textContent = NASCIMENTO;
+    }
+
+    // Auto-fetch if user arrived directly with CPF query parameter without name/birthdate
+    if (!storedData.nascimento || !urlParams.get('nome')) {
+        fetch('/api/check_cpf', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ cpf: CPF_RAW })
+        })
+        .then(r => r.json())
+        .then(data => {
+            if (data.success && data.nome) {
+                NOME = data.nome;
+                NASCIMENTO = data.nascimento || '19/05/2003';
+                localStorage.setItem('customerData', JSON.stringify({
+                    cpf: CPF_RAW,
+                    nome: NOME,
+                    nascimento: NASCIMENTO,
+                    sexo: data.sexo || 'M'
+                }));
+                updateClientElements();
+            }
+        })
+        .catch(() => {});
+    }
+
+    document.addEventListener('DOMContentLoaded', updateClientElements);
 
     // ── Global Audio Unlocking System ──
     let userInteracted = false;

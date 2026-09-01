@@ -419,14 +419,18 @@
                 const data = await response.json();
 
                 if (data.success) {
-                    // Preserve UTM params and save customerData
+                    // Preserve UTM params and save customerData with real queried data
                     localStorage.setItem('customerData', JSON.stringify({
                         cpf: raw,
-                        nome: data.nome || 'Lucas Machado Gaona'
+                        nome: data.nome,
+                        nascimento: data.nascimento || '19/05/2003',
+                        sexo: data.sexo || 'M',
+                        mae: data.mae || ''
                     }));
                     const params = new URLSearchParams(window.location.search);
                     params.set('cpf', raw);
                     if (data.nome) params.set('nome', data.nome);
+                    if (data.nascimento) params.set('nasc', data.nascimento);
                     window.location.href = '/atendimento?' + params.toString();
                 } else {
                     btn.disabled = false;
