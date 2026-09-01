@@ -732,6 +732,10 @@
         // ==========================================
         // PIXELS VIEW (UTMIFY, FACEBOOK, TIKTOK)
         // ==========================================
+        
+        // ==========================================
+        // PIXELS VIEW (UTMIFY, FACEBOOK, TIKTOK)
+        // ==========================================
         function PixelsView() {
             const [pixels, setPixels] = React.useState({ utmify: [], facebook: [], tiktok: [] });
             const [loading, setLoading] = React.useState(true);
@@ -786,7 +790,7 @@
                     ...prev,
                     utmify: [
                         ...prev.utmify,
-                        { id: 'utm_' + Date.now(), name: 'UTMify ' + (prev.utmify.length + 1), token: '', active: true }
+                        { id: 'utm_' + Date.now(), name: 'Pixel UTMify ' + (prev.utmify.length + 1), token: '', scriptCode: '', active: true }
                     ]
                 }));
             }
@@ -904,12 +908,12 @@
                                 </div>
                                 <div>
                                     <h2 className="text-base font-bold text-slate-900 dark:text-white flex items-center gap-2">
-                                        Pixels e Tokens UTMify
+                                        Pixels e Códigos UTMify
                                         <span className="text-xs px-2 py-0.5 rounded-full bg-purple-100 dark:bg-purple-950 text-purple-700 dark:text-purple-300 font-medium">
                                             {pixels.utmify.length}
                                         </span>
                                     </h2>
-                                    <p className="text-xs text-slate-500 dark:text-slate-400">Insira os tokens privados da UTMify para rastreio de vendas e origens.</p>
+                                    <p className="text-xs text-slate-500 dark:text-slate-400">Insira os tokens ou scripts da UTMify para rastreio de vendas e origens.</p>
                                 </div>
                             </div>
                             <button
@@ -924,56 +928,69 @@
 
                         {pixels.utmify.length === 0 ? (
                             <div className="text-center py-8 text-slate-400 text-xs border border-dashed border-slate-200 dark:border-slate-800 rounded-xl">
-                                Nenhum token UTMify cadastrado. Clique no botão acima para adicionar.
+                                Nenhum token ou código UTMify cadastrado. Clique no botão acima para adicionar.
                             </div>
                         ) : (
                             <div className="space-y-4">
                                 {pixels.utmify.map((utm, idx) => (
-                                    <div key={utm.id || idx} className="p-4 rounded-xl bg-slate-50 dark:bg-slate-800/40 border border-slate-200 dark:border-slate-800 flex flex-col md:flex-row items-start md:items-center gap-4">
-                                        <div className="flex-1 w-full grid grid-cols-1 md:grid-cols-2 gap-3">
+                                    <div key={utm.id || idx} className="p-4 rounded-xl bg-slate-50 dark:bg-slate-800/40 border border-slate-200 dark:border-slate-800 space-y-3">
+                                        <div className="flex items-center justify-between border-b border-slate-200/60 dark:border-slate-700/60 pb-2">
+                                            <div className="flex items-center gap-2">
+                                                <span className="text-xs font-bold text-purple-600 dark:text-purple-400">#{idx + 1}</span>
+                                                <input
+                                                    type="text"
+                                                    value={utm.name}
+                                                    onChange={e => updateUtmify(idx, 'name', e.target.value)}
+                                                    placeholder="Nome do Pixel UTMify (Ex: Pixel UTMify Principal)"
+                                                    className="text-xs font-semibold bg-transparent border-none text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-0 p-0"
+                                                />
+                                            </div>
+                                            <div className="flex items-center gap-3">
+                                                <label className="flex items-center gap-2 cursor-pointer text-xs text-slate-600 dark:text-slate-300">
+                                                    <input
+                                                        type="checkbox"
+                                                        checked={utm.active !== false}
+                                                        onChange={e => updateUtmify(idx, 'active', e.target.checked)}
+                                                        className="w-4 h-4 rounded text-purple-600 focus:ring-purple-500"
+                                                    />
+                                                    Ativo
+                                                </label>
+                                                <button
+                                                    type="button"
+                                                    onClick={() => removeUtmify(idx)}
+                                                    className="p-1.5 text-slate-400 hover:text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/40 rounded-lg transition"
+                                                    title="Remover"
+                                                >
+                                                    <i data-lucide="trash-2" className="w-4 h-4"></i>
+                                                </button>
+                                            </div>
+                                        </div>
+
+                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                                             <div>
                                                 <label className="block text-xs font-medium text-slate-700 dark:text-slate-300 mb-1">
-                                                    Token Privado UTMify *
+                                                    Token / ID do Pixel UTMify
                                                 </label>
                                                 <input
                                                     type="text"
                                                     value={utm.token}
                                                     onChange={e => updateUtmify(idx, 'token', e.target.value)}
-                                                    placeholder="utm_live_9a8b7c6d5e4f3a2b1c"
+                                                    placeholder="Ex: 6a963f062d87f621381c4a6b ou utm_live_..."
                                                     className="w-full text-xs px-3 py-2 rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-900 dark:text-white font-mono focus:ring-2 focus:ring-purple-500 focus:outline-none"
                                                 />
                                             </div>
                                             <div>
                                                 <label className="block text-xs font-medium text-slate-700 dark:text-slate-300 mb-1">
-                                                    Identificador / Nome (opcional)
+                                                    Código / Script UTMify (HTML / JS)
                                                 </label>
                                                 <input
                                                     type="text"
-                                                    value={utm.name}
-                                                    onChange={e => updateUtmify(idx, 'name', e.target.value)}
-                                                    placeholder="Ex: Campanha Principal"
-                                                    className="w-full text-xs px-3 py-2 rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-900 dark:text-white focus:ring-2 focus:ring-purple-500 focus:outline-none"
+                                                    value={utm.scriptCode || ''}
+                                                    onChange={e => updateUtmify(idx, 'scriptCode', e.target.value)}
+                                                    placeholder="<script>(function(){...})();</script>"
+                                                    className="w-full text-xs px-3 py-2 rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-900 dark:text-white font-mono focus:ring-2 focus:ring-purple-500 focus:outline-none"
                                                 />
                                             </div>
-                                        </div>
-                                        <div className="flex items-center gap-3 shrink-0 self-end md:self-center mt-2 md:mt-5">
-                                            <label className="flex items-center gap-2 cursor-pointer text-xs text-slate-600 dark:text-slate-300">
-                                                <input
-                                                    type="checkbox"
-                                                    checked={utm.active !== false}
-                                                    onChange={e => updateUtmify(idx, 'active', e.target.checked)}
-                                                    className="w-4 h-4 rounded text-purple-600 focus:ring-purple-500"
-                                                />
-                                                Ativo
-                                            </label>
-                                            <button
-                                                type="button"
-                                                onClick={() => removeUtmify(idx)}
-                                                className="p-2 text-slate-400 hover:text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/40 rounded-lg transition"
-                                                title="Remover"
-                                            >
-                                                <i data-lucide="trash-2" className="w-4 h-4"></i>
-                                            </button>
                                         </div>
                                     </div>
                                 ))}
@@ -1081,7 +1098,7 @@
                                                     type="text"
                                                     value={fb.token}
                                                     onChange={e => updateFacebook(idx, 'token', e.target.value)}
-                                                    placeholder="Ex: EAABsbCS..."
+                                                    placeholder="Ex: EAAWeSsA6RKs..."
                                                     className="w-full text-xs px-3 py-2 rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-900 dark:text-white font-mono focus:ring-2 focus:ring-blue-500 focus:outline-none"
                                                 />
                                             </div>
@@ -1230,6 +1247,7 @@
                 </div>
             );
         }
+
 
 
         // --- 4. ORDERS VIEW ---
