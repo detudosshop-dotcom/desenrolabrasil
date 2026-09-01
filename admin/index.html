@@ -1,46 +1,47 @@
 <!DOCTYPE html>
-<html lang="pt-BR" class="light">
+<html lang="pt-BR">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>RecuperaBrasil · Central Administrativa</title>
-    <!-- Plus Jakarta Sans Font -->
+    <title>RecuperaBrasil - Central Administrativa</title>
+    <meta name="robots" content="noindex, nofollow">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:ital,wght@0,300;0,400;0,500;0,600;0,700;0,800;1,400&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
     <script src="https://cdn.tailwindcss.com"></script>
     <script>
         tailwind.config = {
             darkMode: 'class',
             theme: {
                 extend: {
-                    fontFamily: {
-                        sans: ['Plus Jakarta Sans', 'sans-serif'],
-                        mono: ['JetBrains Mono', 'monospace']
-                    },
                     colors: {
-                        brandGreen: '#00a86b',
-                        brandGreenLight: '#e6f7f0',
-                        navyHero: '#1b3b5a',
-                        navyHeroDark: '#122538',
-                        cardLight: '#ffffff',
-                        cardDark: '#152132',
-                        bgDark: '#0b131f',
-                        borderDark: '#223247'
+                        brand: {
+                            50: '#e6f7f0',
+                            100: '#ccf0e1',
+                            500: '#00a86b',
+                            600: '#00915c',
+                            700: '#007a4e'
+                        },
+                        navy: {
+                            800: '#132238',
+                            900: '#0b131f',
+                            950: '#060a10'
+                        }
+                    },
+                    fontFamily: {
+                        sans: ['"Plus Jakarta Sans"', 'sans-serif'],
+                        mono: ['"JetBrains Mono"', 'monospace']
                     }
                 }
             }
         }
     </script>
     <style>
-        * { box-sizing: border-box; }
-        body { font-family: 'Plus Jakarta Sans', sans-serif; transition: background-color 0.2s, color 0.2s; }
-        .custom-scroll::-webkit-scrollbar { width: 5px; height: 5px; }
+        body { font-family: 'Plus Jakarta Sans', sans-serif; }
+        .custom-scroll::-webkit-scrollbar { width: 6px; height: 6px; }
         .custom-scroll::-webkit-scrollbar-track { background: transparent; }
         .custom-scroll::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
         .dark .custom-scroll::-webkit-scrollbar-thumb { background: #334155; }
-        .animate-spin-fast { animation: spin 0.8s linear infinite; }
-        @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
     </style>
 </head>
 <body class="bg-[#f5f8fb] text-[#132238] dark:bg-[#0b131f] dark:text-[#f1f5f9] min-h-screen antialiased flex flex-col">
@@ -54,17 +55,28 @@
     <script type="text/babel">
         const { useState, useEffect, useMemo, useRef } = React;
 
-        // SVG Icons matching the original visual
-        const Icon = ({ name, className = "w-5 h-5", ...props }) => {
+        // Unified SVG Icon Component
+        const Icon = ({ name, className = "w-4 h-4", ...props }) => {
             switch (name) {
                 case 'credit-card':
                     return <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}><rect x="1" y="4" width="22" height="16" rx="2" ry="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg>;
                 case 'layers':
+                case 'tag':
                     return <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}><polygon points="12 2 2 7 12 12 22 7 12 2"/><polyline points="2 17 12 22 22 17"/><polyline points="2 12 12 17 22 12"/></svg>;
                 case 'clipboard':
+                case 'orders':
                     return <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><rect x="8" y="2" width="8" height="4" rx="1" ry="1"/></svg>;
                 case 'bar-chart':
+                case 'retention':
                     return <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>;
+                case 'activity':
+                    return <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>;
+                case 'share-2':
+                case 'facebook':
+                    return <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg>;
+                case 'video':
+                case 'tiktok':
+                    return <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}><polygon points="23 7 16 12 23 17 23 7"/><rect x="1" y="5" width="15" height="14" rx="2" ry="2"/></svg>;
                 case 'chevron-right':
                     return <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" {...props}><polyline points="9 18 15 12 9 6"/></svg>;
                 case 'sun':
@@ -75,10 +87,6 @@
                     return <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}><path d="M21 2l-2 2m-1.5 1.5L16 7l-2 2-1.5 1.5L9 14l-2 2a4.24 4.24 0 0 1-6-6l2-2 3.5-3.5 1.5-1.5L11 4l1.5-1.5L14 1l2 2 1.5 1.5L19 3l2-1z"/></svg>;
                 case 'shield-check':
                     return <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><polyline points="9 12 11 14 15 10"/></svg>;
-                case 'sliders':
-                    return <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}><line x1="4" y1="21" x2="4" y2="14"/><line x1="4" y1="10" x2="4" y2="3"/><line x1="12" y1="21" x2="12" y2="12"/><line x1="12" y1="8" x2="12" y2="3"/><line x1="20" y1="21" x2="20" y2="16"/><line x1="20" y1="12" x2="20" y2="3"/><line x1="1" y1="14" x2="7" y2="14"/><line x1="9" y1="8" x2="15" y2="8"/><line x1="17" y1="16" x2="23" y2="16"/></svg>;
-                case 'users':
-                    return <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>;
                 case 'refresh-cw':
                     return <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg>;
                 case 'log-out':
@@ -91,12 +99,8 @@
                     return <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>;
                 case 'alert-circle':
                     return <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>;
-                case 'info':
-                    return <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>;
                 case 'search':
                     return <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>;
-                case 'copy':
-                    return <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>;
                 case 'trash-2':
                     return <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>;
                 case 'menu':
@@ -108,13 +112,12 @@
             }
         };
 
+        // Main App
         function App() {
             const [sessionUser, setSessionUser] = useState(null);
             const [authLoading, setAuthLoading] = useState(true);
-            const [activeTab, setActiveTab] = useState('portal'); // 'portal', 'offers', 'orders', 'retention'
-            const [darkMode, setDarkMode] = useState(() => {
-                return localStorage.getItem('recupera_theme') === 'dark';
-            });
+            const [activeTab, setActiveTab] = useState('portal'); // 'portal', 'pixels', 'orders', 'retention'
+            const [darkMode, setDarkMode] = useState(() => localStorage.getItem('recupera_theme') === 'dark');
             const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
 
             useEffect(() => {
@@ -134,7 +137,7 @@
                     return;
                 }
                 fetch('/api/admin/auth/me', {
-                    headers: { 'Authorization': `Bearer ${token}` }
+                    headers: { 'Authorization': 'Bearer ' + token }
                 })
                 .then(r => r.json())
                 .then(data => {
@@ -158,7 +161,7 @@
                 const token = localStorage.getItem('recupera_admin_token');
                 fetch('/api/admin/auth/logout', {
                     method: 'POST',
-                    headers: { 'Authorization': `Bearer ${token}` }
+                    headers: { 'Authorization': 'Bearer ' + token }
                 }).finally(() => {
                     localStorage.removeItem('recupera_admin_token');
                     setSessionUser(null);
@@ -167,8 +170,8 @@
 
             if (authLoading) {
                 return (
-                    <div className="min-h-screen flex items-center justify-center bg-[#f5f8fb] dark:bg-[#0b131f]">
-                        <div className="w-8 h-8 border-3 border-[#00a86b]/20 border-t-[#00a86b] rounded-full animate-spin-fast"></div>
+                    <div className="min-h-screen bg-[#f5f8fb] dark:bg-[#0b131f] flex items-center justify-center">
+                        <div className="w-8 h-8 border-4 border-[#00a86b] border-t-transparent rounded-full animate-spin"></div>
                     </div>
                 );
             }
@@ -178,21 +181,23 @@
             }
 
             return (
-                <div className="min-h-screen flex flex-col md:flex-row bg-[#f5f8fb] dark:bg-[#0b131f] text-[#132238] dark:text-[#f1f5f9]">
-                    {/* SIDEBAR DESKTOP */}
-                    <aside className="hidden md:flex flex-col w-[240px] fixed inset-y-0 left-0 bg-white dark:bg-[#111c2d] border-r border-[#e2e9f0] dark:border-[#1e2d42] z-30 justify-between p-5">
-                        <SidebarContent 
-                            activeTab={activeTab} 
-                            setActiveTab={setActiveTab} 
-                            onLogout={handleLogout} 
-                        />
+                <div className="min-h-screen bg-[#f5f8fb] dark:bg-[#0b131f] text-[#132238] dark:text-[#f1f5f9] flex flex-col md:flex-row">
+                    {/* DESKTOP SIDEBAR */}
+                    <aside className="hidden md:flex flex-col w-[240px] bg-white dark:bg-[#111c2d] border-r border-[#e2e9f0] dark:border-[#1e2d42] p-5 fixed h-full z-30">
+                        <SidebarContent activeTab={activeTab} setActiveTab={setActiveTab} onLogout={handleLogout} />
                     </aside>
 
                     {/* MOBILE DRAWER */}
                     {mobileSidebarOpen && (
-                        <div className="fixed inset-0 z-50 flex md:hidden">
-                            <div className="fixed inset-0 bg-black/50 backdrop-blur-xs" onClick={() => setMobileSidebarOpen(false)}></div>
-                            <div className="relative flex flex-col w-[260px] max-w-[85%] bg-white dark:bg-[#111c2d] h-full shadow-2xl z-10 p-5 justify-between">
+                        <div className="fixed inset-0 z-50 md:hidden flex">
+                            <div className="fixed inset-0 bg-black/60 backdrop-blur-sm" onClick={() => setMobileSidebarOpen(false)}></div>
+                            <div className="relative w-[280px] bg-white dark:bg-[#111c2d] p-6 flex flex-col h-full z-10 shadow-2xl">
+                                <button 
+                                    onClick={() => setMobileSidebarOpen(false)}
+                                    className="absolute top-4 right-4 p-2 text-[#718197] hover:text-[#132238] dark:hover:text-white"
+                                >
+                                    <Icon name="x" className="w-5 h-5" />
+                                </button>
                                 <SidebarContent 
                                     activeTab={activeTab} 
                                     setActiveTab={(t) => { setActiveTab(t); setMobileSidebarOpen(false); }} 
@@ -216,13 +221,13 @@
                                 <div>
                                     <span className="text-[11px] font-extrabold uppercase tracking-wider text-[#00a86b] block">
                                         {activeTab === 'portal' && 'CONFIGURAÇÃO'}
-                                        {activeTab === 'offers' && 'RASTREAMENTO POR URL'}
+                                        {activeTab === 'pixels' && 'RASTREAMENTO GLOBAL'}
                                         {activeTab === 'orders' && 'AO VIVO'}
                                         {activeTab === 'retention' && 'ANÁLISE DA OPERAÇÃO'}
                                     </span>
                                     <h1 className="text-xl font-bold text-[#132238] dark:text-white leading-tight">
                                         {activeTab === 'portal' && 'Portais de pagamento'}
-                                        {activeTab === 'offers' && 'Ofertas e pixels'}
+                                        {activeTab === 'pixels' && 'Pixels de rastreamento'}
                                         {activeTab === 'orders' && 'Pedidos'}
                                         {activeTab === 'retention' && 'Retenção e funil'}
                                     </h1>
@@ -230,7 +235,7 @@
                             </div>
 
                             <div className="flex items-center gap-4">
-                                {/* THEME TOGGLE BUTTON (LIGHT / DARK) */}
+                                {/* THEME TOGGLE */}
                                 <button
                                     onClick={() => setDarkMode(!darkMode)}
                                     className="p-2 rounded-xl border border-[#e2e9f0] dark:border-[#1e2d42] bg-[#f5f8fb] dark:bg-[#152132] text-[#718197] dark:text-[#94a3b8] hover:text-[#00a86b] transition-all flex items-center gap-2 text-xs font-bold"
@@ -239,20 +244,6 @@
                                     <Icon name={darkMode ? 'sun' : 'moon'} className="w-4 h-4 text-[#00a86b]" />
                                     <span className="hidden sm:inline">{darkMode ? 'Tema Claro' : 'Tema Escuro'}</span>
                                 </button>
-
-                                {activeTab === 'retention' && (
-                                    <div className="hidden sm:flex items-center gap-1.5 px-3 py-1.5 rounded-full border border-[#00a86b]/20 bg-[#e6f7f0] dark:bg-[#00a86b]/10 text-[#00a86b] text-xs font-bold">
-                                        <span className="w-2 h-2 rounded-full bg-[#00a86b]"></span>
-                                        <span>Atualizado agora</span>
-                                    </div>
-                                )}
-
-                                {activeTab === 'portal' && (
-                                    <div className="hidden sm:flex items-center gap-1.5 px-3 py-1.5 rounded-full border border-[#00a86b]/20 bg-[#e6f7f0] dark:bg-[#00a86b]/10 text-[#00a86b] text-xs font-bold">
-                                        <span className="w-2 h-2 rounded-full bg-[#00a86b]"></span>
-                                        <span>Dados protegidos</span>
-                                    </div>
-                                )}
 
                                 <div className="w-8 h-8 rounded-full bg-[#132238] dark:bg-[#00a86b] text-white flex items-center justify-center font-bold text-xs">
                                     {sessionUser.username ? sessionUser.username.substring(0, 2).toUpperCase() : 'RB'}
@@ -276,7 +267,7 @@
         function SidebarContent({ activeTab, setActiveTab, onLogout }) {
             const navItems = [
                 { id: 'portal', label: 'Portal', icon: 'credit-card' },
-                { id: 'offers', label: 'Ofertas e pixels', icon: 'layers' },
+                { id: 'pixels', label: 'Pixels', icon: 'layers' },
                 { id: 'orders', label: 'Pedidos', icon: 'clipboard' },
                 { id: 'retention', label: 'Retenção', icon: 'bar-chart' }
             ];
@@ -310,14 +301,14 @@
                                     <button
                                         key={item.id}
                                         onClick={() => setActiveTab(item.id)}
-                                        className={`w-full flex items-center justify-between px-3.5 py-2.5 rounded-xl text-xs sm:text-sm font-semibold transition-all ${
+                                        className={"w-full flex items-center justify-between px-3.5 py-2.5 rounded-xl text-xs sm:text-sm font-semibold transition-all " + (
                                             isActive
-                                                ? 'bg-[#e6f7f0] dark:bg-[#00a86b]/15 text-[#00a86b] font-bold border border-[#00a86b]/20'
-                                                : 'text-[#718197] dark:text-[#94a3b8] hover:bg-[#f1f5f9] dark:hover:bg-[#152132] hover:text-[#132238] dark:hover:text-white'
-                                        }`}
+                                                ? "bg-[#e6f7f0] dark:bg-[#00a86b]/15 text-[#00a86b] font-bold border border-[#00a86b]/20"
+                                                : "text-[#718197] dark:text-[#94a3b8] hover:bg-[#f1f5f9] dark:hover:bg-[#152132] hover:text-[#132238] dark:hover:text-white"
+                                        )}
                                     >
                                         <div className="flex items-center gap-3">
-                                            <Icon name={item.icon} className={`w-4 h-4 ${isActive ? 'text-[#00a86b]' : 'text-[#718197]'}`} />
+                                            <Icon name={item.icon} className={"w-4 h-4 " + (isActive ? "text-[#00a86b]" : "text-[#718197]")} />
                                             <span>{item.label}</span>
                                         </div>
                                         {isActive && <Icon name="chevron-right" className="w-3.5 h-3.5 text-[#00a86b]" />}
@@ -448,7 +439,7 @@
 
                         <div className="mt-6 pt-4 border-t border-[#e2e9f0] dark:border-[#1e2d42] text-center text-[11px] text-[#718197] space-y-1">
                             <span className="font-semibold text-[#132238] dark:text-white block">Ambiente protegido</span>
-                            <span>Sessão protegida e válida por 8 horas.</span>
+                            <span>Acesso exclusivo para administradores</span>
                         </div>
                     </div>
                 </div>
@@ -469,7 +460,7 @@
             const loadConfig = () => {
                 const token = localStorage.getItem('recupera_admin_token');
                 fetch('/api/admin/gateway-config', {
-                    headers: { 'Authorization': `Bearer ${token}` }
+                    headers: { 'Authorization': 'Bearer ' + token }
                 })
                 .then(r => r.json())
                 .then(data => {
@@ -512,7 +503,7 @@
                         method: method,
                         headers: {
                             'Content-Type': 'application/json',
-                            'Authorization': `Bearer ${token}`
+                            'Authorization': 'Bearer ' + token
                         },
                         body: JSON.stringify({
                             gatewayKey: selectedGwKey,
@@ -521,24 +512,22 @@
                             maxAmountCents: Number(editLimit)
                         })
                     });
-                    const data = await res.json();
 
+                    const data = await res.json();
                     if (data.success) {
                         setTestResult({
                             type: 'success',
-                            msg: isSwitch 
-                                ? `PIX de teste de R$ 1,00 gerado com sucesso. Gateway ${currentGw?.name} ativada!` 
-                                : 'Credenciais salvas com sucesso!'
+                            text: data.test ? data.test.message : (data.message || 'Configurações salvas!')
                         });
                         loadConfig();
                     } else {
                         setTestResult({
                             type: 'error',
-                            msg: data.error || 'Erro ao processar ativação de gateway.'
+                            text: data.error || 'Falha ao salvar gateway.'
                         });
                     }
                 } catch(e) {
-                    setTestResult({ type: 'error', msg: 'Erro de conexão com o servidor.' });
+                    setTestResult({ type: 'error', text: 'Erro de comunicação.' });
                 } finally {
                     setTesting(false);
                 }
@@ -547,448 +536,346 @@
             if (loading || !config) {
                 return (
                     <div className="py-20 flex justify-center">
-                        <div className="w-8 h-8 border-3 border-[#00a86b]/20 border-t-[#00a86b] rounded-full animate-spin-fast"></div>
+                        <div className="w-8 h-8 border-4 border-[#00a86b] border-t-transparent rounded-full animate-spin"></div>
                     </div>
                 );
             }
 
-            const isSwitch = selectedGwKey !== config.activeGatewayKey;
-
-            const gwColors = {
-                freepay: { bg: 'bg-[#132238]', text: 'F', name: 'Pagamento gratuito' },
-                blackcat: { bg: 'bg-[#0091ea]', text: 'B', name: 'GatoPreto' },
-                flevopay: { bg: 'bg-[#9c27b0]', text: 'F', name: 'FlevoPay' },
-                duttyfy: { bg: 'bg-[#ff9800]', text: 'D', name: 'Duttyfy' },
-                pingupag: { bg: 'bg-[#e91e63]', text: 'P', name: 'PinguPag' }
-            };
-
             return (
                 <div className="space-y-6">
-                    <p className="text-xs text-[#718197] dark:text-[#94a3b8]">
-                        Escolha o gateway ativo e mantenha as credenciais da operação protegida.
-                    </p>
+                    <div>
+                        <span className="text-[10px] font-bold text-[#00a86b] uppercase tracking-wider">GATEWAY EM PRODUÇÃO</span>
+                        <h2 className="text-xl font-bold text-[#132238] dark:text-white mt-0.5">Portais de Pagamento</h2>
+                        <p className="text-xs text-[#718197] dark:text-[#94a3b8] mt-1">
+                            Selecione a adquirente ativa para emissão do PIX. Alterne com segurança testando com cobrança de R$ 1,00.
+                        </p>
+                    </div>
 
                     {testResult && (
-                        <div className={`p-4 rounded-xl text-xs font-bold flex items-center gap-2.5 ${
-                            testResult.type === 'success' 
-                                ? 'bg-[#e6f7f0] dark:bg-[#00a86b]/20 text-[#00a86b] border border-[#00a86b]/30' 
-                                : 'bg-red-50 dark:bg-red-950/40 text-red-600 dark:text-red-400 border border-red-200 dark:border-red-900/40'
-                        }`}>
-                            <Icon name={testResult.type === 'success' ? 'check-circle' : 'alert-circle'} className="w-4 h-4 flex-shrink-0" />
-                            <span>{testResult.msg}</span>
+                        <div className={"p-4 rounded-2xl border text-xs font-bold flex items-center justify-between gap-3 " + (
+                            testResult.type === 'success'
+                                ? "bg-[#e6f7f0] dark:bg-[#00a86b]/15 text-[#00a86b] border-[#00a86b]/30"
+                                : "bg-red-50 dark:bg-red-950/40 text-red-600 border-red-200 dark:border-red-900"
+                        )}>
+                            <div className="flex items-center gap-2">
+                                <Icon name={testResult.type === 'success' ? 'check-circle' : 'alert-circle'} className="w-5 h-5 flex-shrink-0" />
+                                <span>{testResult.text}</span>
+                            </div>
+                            <button onClick={() => setTestResult(null)} className="text-xs opacity-70 hover:opacity-100">✕</button>
                         </div>
                     )}
 
-                    <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
-                        {/* LEFT COLUMN */}
-                        <div className="lg:col-span-7 bg-white dark:bg-[#152132] rounded-[16px] border border-[#e2e9f0] dark:border-[#1e2d42] p-6 shadow-sm space-y-5">
-                            <div className="flex items-center justify-between pb-3 border-b border-[#e2e9f0] dark:border-[#1e2d42]">
-                                <div>
-                                    <h3 className="text-sm font-bold text-[#132238] dark:text-white">Portal ativo</h3>
-                                    <p className="text-[11px] text-[#718197] dark:text-[#94a3b8]">O checkout público usa o gateway selecionado quando a integração estiver disponível</p>
-                                </div>
-                                <Icon name="sliders" className="w-4 h-4 text-[#00a86b]" />
-                            </div>
-
-                            <div className="space-y-2.5">
+                    <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+                        {/* LEFT: GATEWAY LIST */}
+                        <div className="lg:col-span-5 bg-white dark:bg-[#152132] rounded-[24px] p-6 border border-[#e2e9f0] dark:border-[#1e2d42] shadow-sm">
+                            <h3 className="text-sm font-extrabold text-[#132238] dark:text-white mb-4">Portais cadastrados</h3>
+                            <div className="space-y-3">
                                 {config.gateways.map(gw => {
                                     const isSelected = selectedGwKey === gw.key;
-                                    const isActive = config.activeGatewayKey === gw.key;
-                                    const styleInfo = gwColors[gw.key] || { bg: 'bg-[#132238]', text: gw.name.charAt(0) };
+                                    const isActiveInProd = config.activeGatewayKey === gw.key;
 
                                     return (
                                         <div
                                             key={gw.key}
                                             onClick={() => setSelectedGwKey(gw.key)}
-                                            className={`p-3.5 rounded-xl border cursor-pointer transition-all flex items-center justify-between ${
-                                                isSelected 
-                                                    ? 'border-[#00a86b] bg-[#e6f7f0]/30 dark:bg-[#00a86b]/10' 
-                                                    : 'border-[#e2e9f0] dark:border-[#1e2d42] hover:bg-[#f8fafc] dark:hover:bg-[#111c2d]'
-                                            } ${!gw.hasAdapter ? 'opacity-80' : ''}`}
+                                            className={"p-4 rounded-2xl border cursor-pointer transition-all " + (
+                                                isSelected
+                                                    ? "border-[#00a86b] bg-[#e6f7f0]/40 dark:bg-[#00a86b]/10 shadow-sm"
+                                                    : "border-[#e2e9f0] dark:border-[#1e2d42] bg-white dark:bg-[#111c2d] hover:border-[#cbd5e1]"
+                                            )}
                                         >
-                                            <div className="flex items-center gap-3">
-                                                <div className={`w-4 h-4 rounded-full border-2 flex items-center justify-center ${
-                                                    isSelected ? 'border-[#00a86b] bg-[#00a86b]' : 'border-[#cbd5e1] dark:border-[#334155]'
-                                                }`}>
-                                                    {isSelected && <div className="w-1.5 h-1.5 rounded-full bg-white"></div>}
+                                            <div className="flex items-center justify-between mb-1.5">
+                                                <div className="flex items-center gap-2">
+                                                    <span className="font-extrabold text-sm text-[#132238] dark:text-white">{gw.name}</span>
+                                                    {isActiveInProd && (
+                                                        <span className="px-2 py-0.5 rounded-full text-[10px] font-extrabold bg-[#00a86b] text-white">
+                                                            EM PRODUÇÃO
+                                                        </span>
+                                                    )}
                                                 </div>
-
-                                                <div className={`w-8 h-8 rounded-lg ${styleInfo.bg} text-white flex items-center justify-center font-bold text-xs`}>
-                                                    {styleInfo.text}
-                                                </div>
-
-                                                <div>
-                                                    <h4 className="text-xs font-bold text-[#132238] dark:text-white leading-tight">{gw.name}</h4>
-                                                    <span className="text-[11px] text-[#718197] dark:text-[#94a3b8]">{gw.statusText}</span>
-                                                </div>
+                                                <span className={"text-[10px] font-bold px-2 py-0.5 rounded-full " + (
+                                                    gw.hasAdapter 
+                                                        ? "bg-emerald-50 dark:bg-emerald-950/40 text-emerald-600 dark:text-emerald-400" 
+                                                        : "bg-slate-100 dark:bg-slate-800 text-slate-500"
+                                                )}>
+                                                    {gw.statusText}
+                                                </span>
                                             </div>
-
-                                            <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${
-                                                isActive 
-                                                    ? 'bg-[#e6f7f0] dark:bg-[#00a86b]/20 text-[#00a86b]' 
-                                                    : 'text-[#718197]'
-                                            }`}>
-                                                {isActive ? 'Ativa' : (gw.hasAdapter ? 'Configurado' : 'Aguardando')}
-                                            </span>
+                                            <div className="text-[11px] text-[#718197] dark:text-[#94a3b8] space-y-0.5">
+                                                <div>Chave pública: <span className="font-mono">{gw.publicKeyMasked || 'Não configurada'}</span></div>
+                                                <div>Chave secreta: <span className="font-mono">{gw.secretKeyMasked || 'Não configurada'}</span></div>
+                                            </div>
                                         </div>
                                     );
                                 })}
                             </div>
-
-                            <div className="p-3.5 rounded-xl bg-[#f0f7ff] dark:bg-[#0f1d2e] border border-[#d0e5ff] dark:border-[#19324d] flex items-start gap-3">
-                                <Icon name="shield-check" className="w-4 h-4 text-[#0091ea] flex-shrink-0 mt-0.5" />
-                                <p className="text-[11px] text-[#132238] dark:text-[#cbd5e1] leading-relaxed">
-                                    <strong>{currentGw?.name}</strong> será usado na finalização da compra. Ao trocar de plataforma, o sistema gera um PIX real de teste de R$ 1,00 e só ativa o gateway se o código for retornado.
-                                </p>
-                            </div>
                         </div>
 
-                        {/* RIGHT COLUMN */}
-                        <div className="lg:col-span-5 bg-white dark:bg-[#152132] rounded-[16px] border border-[#e2e9f0] dark:border-[#1e2d42] p-6 shadow-sm space-y-5 flex flex-col justify-between">
+                        {/* RIGHT: CREDENTIALS EDITOR */}
+                        <div className="lg:col-span-7 bg-white dark:bg-[#152132] rounded-[24px] p-6 sm:p-8 border border-[#e2e9f0] dark:border-[#1e2d42] shadow-sm space-y-5">
+                            <div className="border-b border-[#e2e9f0] dark:border-[#1e2d42] pb-4">
+                                <span className="text-[10px] font-bold text-[#00a86b] uppercase tracking-wider">CREDENCIAS DA ADQUIRENTE</span>
+                                <h3 className="text-lg font-bold text-[#132238] dark:text-white mt-0.5">Configurar {currentGw?.name}</h3>
+                                <p className="text-xs text-[#718197] dark:text-[#94a3b8] mt-0.5">
+                                    Informe a chave de API fornecida no painel da {currentGw?.name}.
+                                </p>
+                            </div>
+
                             <div className="space-y-4">
-                                <div className="flex items-center justify-between pb-3 border-b border-[#e2e9f0] dark:border-[#1e2d42]">
-                                    <div>
-                                        <h3 className="text-sm font-bold text-[#132238] dark:text-white">Credenciais · {currentGw?.name}</h3>
-                                        <p className="text-[11px] text-[#718197] dark:text-[#94a3b8]">Valores salvos nunca são exibidos por completo.</p>
-                                    </div>
-                                    <Icon name="key" className="w-4 h-4 text-[#00a86b]" />
-                                </div>
-
                                 <div>
-                                    <label className="block text-xs font-bold text-[#132238] dark:text-white mb-1">Portal para editar</label>
-                                    <select
-                                        value={selectedGwKey}
-                                        onChange={(e) => setSelectedGwKey(e.target.value)}
-                                        className="w-full text-xs font-bold px-3 py-2.5 rounded-xl border border-[#e2e9f0] dark:border-[#223247] bg-white dark:bg-[#0b131f] text-[#132238] dark:text-white"
-                                    >
-                                        {config.gateways.map(g => (
-                                            <option key={g.key} value={g.key}>{g.name}</option>
-                                        ))}
-                                    </select>
-                                </div>
-
-                                <div>
-                                    <label className="block text-xs font-bold text-[#132238] dark:text-white mb-1">Chave secreta</label>
+                                    <label className="block text-xs font-bold text-[#132238] dark:text-white uppercase mb-1">
+                                        Chave Secreta (Secret Key / API Key) *
+                                    </label>
                                     <input
                                         type="password"
                                         value={editSecret}
                                         onChange={(e) => setEditSecret(e.target.value)}
-                                        placeholder={currentGw?.secretKeyMasked || "••••••••1a46"}
-                                        className="w-full text-xs font-mono px-3 py-2.5 rounded-xl border border-[#e2e9f0] dark:border-[#223247] bg-white dark:bg-[#0b131f] text-[#132238] dark:text-white"
+                                        placeholder={currentGw?.secretKeyMasked || "Insira a chave secreta..."}
+                                        className="w-full px-3.5 py-2.5 rounded-xl border border-[#e2e9f0] dark:border-[#223247] bg-white dark:bg-[#0b131f] text-sm text-[#132238] dark:text-white font-mono"
                                     />
                                 </div>
 
                                 <div>
-                                    <label className="block text-xs font-bold text-[#132238] dark:text-white mb-1">Chave pública</label>
+                                    <label className="block text-xs font-bold text-[#132238] dark:text-white uppercase mb-1">
+                                        Chave Pública (Public Key)
+                                    </label>
                                     <input
                                         type="text"
                                         value={editPublic}
                                         onChange={(e) => setEditPublic(e.target.value)}
-                                        placeholder={currentGw?.publicKeyMasked || "pk_••••••••••••8674"}
-                                        className="w-full text-xs font-mono px-3 py-2.5 rounded-xl border border-[#e2e9f0] dark:border-[#223247] bg-white dark:bg-[#0b131f] text-[#132238] dark:text-white"
+                                        placeholder={currentGw?.publicKeyMasked || "Insira a chave pública (opcional para algumas APIs)..."}
+                                        className="w-full px-3.5 py-2.5 rounded-xl border border-[#e2e9f0] dark:border-[#223247] bg-white dark:bg-[#0b131f] text-sm text-[#132238] dark:text-white font-mono"
                                     />
-                                </div>
-
-                                <div>
-                                    <label className="block text-xs font-bold text-[#132238] dark:text-white mb-1">Limite máximo por cobrança</label>
-                                    <div className="relative">
-                                        <span className="absolute left-3 top-1/2 -translate-y-1/2 text-xs font-bold text-[#718197]">R$</span>
-                                        <input
-                                            type="text"
-                                            value={editLimit}
-                                            onChange={(e) => setEditLimit(e.target.value)}
-                                            className="w-full pl-9 pr-3 py-2.5 rounded-xl border border-[#e2e9f0] dark:border-[#223247] bg-white dark:bg-[#0b131f] text-xs font-bold text-[#132238] dark:text-white"
-                                        />
-                                    </div>
                                 </div>
                             </div>
 
-                            <button
-                                type="button"
-                                onClick={handleSaveOrTest}
-                                disabled={testing}
-                                className="w-full py-3 rounded-xl bg-[#00a86b] hover:bg-[#00915c] text-white font-bold text-xs shadow-md transition-all flex items-center justify-center gap-2 mt-4"
-                            >
-                                {testing ? (
-                                    <>
-                                        <div className="w-3.5 h-3.5 border-2 border-white/30 border-t-white rounded-full animate-spin-fast"></div>
-                                        <span>Processando...</span>
-                                    </>
-                                ) : (
-                                    <>
-                                        <Icon name="check" className="w-4 h-4" />
-                                        <span>{isSwitch ? 'Testar PIX e ativar' : 'Salvar'}</span>
-                                    </>
-                                )}
-                            </button>
+                            <div className="pt-2">
+                                <button
+                                    type="button"
+                                    onClick={handleSaveOrTest}
+                                    disabled={testing}
+                                    className="w-full py-3.5 rounded-xl bg-[#00a86b] hover:bg-[#00915c] text-white font-bold text-xs shadow-md transition-all flex items-center justify-center gap-2 disabled:opacity-50"
+                                >
+                                    {testing ? (
+                                        <>
+                                            <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                                            Processando teste de PIX...
+                                        </>
+                                    ) : (
+                                        <>
+                                            <Icon name="check" className="w-4 h-4" />
+                                            {selectedGwKey === config.activeGatewayKey ? 'Salvar credenciais' : ('Testar PIX (R$ 1,00) e Ativar ' + (currentGw ? currentGw.name : ''))}
+                                        </>
+                                    )}
+                                </button>
+                            </div>
                         </div>
                     </div>
                 </div>
             );
         }
 
-        // --- 3. OFFERS VIEW ---
-        
-        // ==========================================
-        // PIXELS VIEW (UTMIFY, FACEBOOK, TIKTOK)
-        // ==========================================
-        
-        // ==========================================
-        // PIXELS VIEW (UTMIFY, FACEBOOK, TIKTOK)
-        // ==========================================
+        // --- 3. PIXELS VIEW ---
         function PixelsView() {
-            const [pixels, setPixels] = React.useState({ utmify: [], facebook: [], tiktok: [] });
-            const [loading, setLoading] = React.useState(true);
-            const [saving, setSaving] = React.useState(false);
-            const [toast, setToast] = React.useState(null);
+            const [pixels, setPixels] = useState({ utmify: [], facebook: [], tiktok: [] });
+            const [loading, setLoading] = useState(true);
+            const [saving, setSaving] = useState(false);
+            const [toast, setToast] = useState(null);
 
-            React.useEffect(() => {
-                fetchPixels();
-            }, []);
-
-            async function fetchPixels() {
-                try {
-                    setLoading(true);
-                    const res = await apiRequest('/api/admin/pixels');
-                    if (res && res.pixels) {
+            useEffect(() => {
+                const token = localStorage.getItem('recupera_admin_token');
+                fetch('/api/admin/pixels', {
+                    headers: { 'Authorization': 'Bearer ' + token }
+                })
+                .then(r => r.json())
+                .then(data => {
+                    if (data && data.pixels) {
                         setPixels({
-                            utmify: res.pixels.utmify || [],
-                            facebook: res.pixels.facebook || [],
-                            tiktok: res.pixels.tiktok || []
+                            utmify: data.pixels.utmify || [],
+                            facebook: data.pixels.facebook || [],
+                            tiktok: data.pixels.tiktok || []
                         });
                     }
-                } catch(err) {
-                    console.error('Error fetching pixels:', err);
-                } finally {
-                    setLoading(false);
-                }
-            }
+                })
+                .catch(err => console.error('Error loading pixels:', err))
+                .finally(() => setLoading(false));
+            }, []);
 
-            async function handleSave() {
+            const handleSave = async () => {
                 setSaving(true);
+                const token = localStorage.getItem('recupera_admin_token');
                 try {
-                    const res = await apiRequest('/api/admin/pixels', {
+                    const res = await fetch('/api/admin/pixels', {
                         method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'Authorization': 'Bearer ' + token
+                        },
                         body: JSON.stringify(pixels)
                     });
-                    if (res && res.success) {
-                        setToast({ type: 'success', text: 'Todos os pixels foram salvos e aplicados com sucesso em todas as páginas do site!' });
+                    const data = await res.json();
+                    if (data && data.success) {
+                        setToast({ type: 'success', text: 'Todos os pixels foram salvos e aplicados com sucesso em todo o site!' });
                         setTimeout(() => setToast(null), 5000);
                     } else {
-                        setToast({ type: 'error', text: res?.error || 'Erro ao salvar os pixels.' });
+                        setToast({ type: 'error', text: data?.error || 'Erro ao salvar os pixels.' });
                     }
-                } catch(err) {
-                    setToast({ type: 'error', text: err.message });
+                } catch(e) {
+                    setToast({ type: 'error', text: 'Erro de conexão ao salvar.' });
                 } finally {
                     setSaving(false);
                 }
-            }
+            };
 
-            // UTMify handlers
-            function addUtmify() {
+            // Handlers
+            const addUtmify = () => {
                 setPixels(prev => ({
                     ...prev,
-                    utmify: [
-                        ...prev.utmify,
-                        { id: 'utm_' + Date.now(), name: 'Pixel UTMify ' + (prev.utmify.length + 1), token: '', scriptCode: '', active: true }
-                    ]
+                    utmify: [...prev.utmify, { id: 'utm_' + Date.now(), name: 'Pixel UTMify ' + (prev.utmify.length + 1), token: '', scriptCode: '', active: true }]
                 }));
-            }
+            };
 
-            function updateUtmify(index, field, value) {
+            const updateUtmify = (idx, field, val) => {
                 setPixels(prev => {
                     const next = [...prev.utmify];
-                    next[index][field] = value;
+                    next[idx][field] = val;
                     return { ...prev, utmify: next };
                 });
-            }
+            };
 
-            function removeUtmify(index) {
+            const removeUtmify = (idx) => {
+                setPixels(prev => ({ ...prev, utmify: prev.utmify.filter((_, i) => i !== idx) }));
+            };
+
+            const addFacebook = () => {
                 setPixels(prev => ({
                     ...prev,
-                    utmify: prev.utmify.filter((_, i) => i !== index)
+                    facebook: [...prev.facebook, { id: 'fb_' + Date.now(), name: 'Pixel Meta ' + (prev.facebook.length + 1), pixelId: '', code: '', token: '', active: true }]
                 }));
-            }
+            };
 
-            // Facebook handlers
-            function addFacebook() {
-                setPixels(prev => ({
-                    ...prev,
-                    facebook: [
-                        ...prev.facebook,
-                        { id: 'fb_' + Date.now(), name: 'Pixel Meta ' + (prev.facebook.length + 1), pixelId: '', code: '', token: '', active: true }
-                    ]
-                }));
-            }
-
-            function updateFacebook(index, field, value) {
+            const updateFacebook = (idx, field, val) => {
                 setPixels(prev => {
                     const next = [...prev.facebook];
-                    next[index][field] = value;
+                    next[idx][field] = val;
                     return { ...prev, facebook: next };
                 });
-            }
+            };
 
-            function removeFacebook(index) {
+            const removeFacebook = (idx) => {
+                setPixels(prev => ({ ...prev, facebook: prev.facebook.filter((_, i) => i !== idx) }));
+            };
+
+            const addTikTok = () => {
                 setPixels(prev => ({
                     ...prev,
-                    facebook: prev.facebook.filter((_, i) => i !== index)
+                    tiktok: [...prev.tiktok, { id: 'tt_' + Date.now(), name: 'Pixel TikTok ' + (prev.tiktok.length + 1), pixelId: '', code: '', token: '', active: true }]
                 }));
-            }
+            };
 
-            // TikTok handlers
-            function addTikTok() {
-                setPixels(prev => ({
-                    ...prev,
-                    tiktok: [
-                        ...prev.tiktok,
-                        { id: 'tt_' + Date.now(), name: 'Pixel TikTok ' + (prev.tiktok.length + 1), pixelId: '', code: '', token: '', active: true }
-                    ]
-                }));
-            }
-
-            function updateTikTok(index, field, value) {
+            const updateTikTok = (idx, field, val) => {
                 setPixels(prev => {
                     const next = [...prev.tiktok];
-                    next[index][field] = value;
+                    next[idx][field] = val;
                     return { ...prev, tiktok: next };
                 });
-            }
+            };
 
-            function removeTikTok(index) {
-                setPixels(prev => ({
-                    ...prev,
-                    tiktok: prev.tiktok.filter((_, i) => i !== index)
-                }));
-            }
+            const removeTikTok = (idx) => {
+                setPixels(prev => ({ ...prev, tiktok: prev.tiktok.filter((_, i) => i !== idx) }));
+            };
 
             if (loading) {
                 return (
-                    <div className="flex items-center justify-center py-20">
-                        <div className="w-8 h-8 border-4 border-emerald-500 border-t-transparent rounded-full animate-spin"></div>
+                    <div className="py-20 flex justify-center">
+                        <div className="w-8 h-8 border-4 border-[#00a86b] border-t-transparent rounded-full animate-spin"></div>
                     </div>
                 );
             }
 
             return (
-                <div className="space-y-6 pb-16">
-                    {/* Header */}
+                <div className="space-y-6 pb-20">
                     <div>
-                        <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold uppercase tracking-wider text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-800 mb-2">
-                            <i data-lucide="activity" className="w-3.5 h-3.5"></i>
-                            Rastreamento Global
-                        </div>
-                        <h1 className="text-2xl font-bold text-slate-900 dark:text-white">Pixels de Rastreamento</h1>
-                        <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">
-                            Adicione quantos pixels de <strong>UTMify</strong>, <strong>Facebook/Meta</strong> e <strong>TikTok</strong> desejar. Todos os pixels ativos são aplicados e disparados automaticamente em todas as etapas e páginas do funil.
+                        <span className="text-[10px] font-bold text-[#00a86b] uppercase tracking-wider">RASTREAMENTO GLOBAL</span>
+                        <h2 className="text-xl font-bold text-[#132238] dark:text-white mt-0.5">Pixels de Rastreamento</h2>
+                        <p className="text-xs text-[#718197] dark:text-[#94a3b8] mt-1">
+                            Adicione quantos pixels de <strong>UTMify</strong>, <strong>Facebook/Meta</strong> e <strong>TikTok</strong> desejar. Todos os pixels ativos são aplicados e disparados automaticamente em todas as páginas do funil.
                         </p>
                     </div>
 
-                    {/* Toast alert */}
                     {toast && (
-                        <div className={`p-4 rounded-xl text-sm font-medium flex items-center gap-3 ${
-                            toast.type === 'success' 
-                                ? 'bg-emerald-50 dark:bg-emerald-950/40 text-emerald-800 dark:text-emerald-200 border border-emerald-200 dark:border-emerald-800' 
-                                : 'bg-rose-50 dark:bg-rose-950/40 text-rose-800 dark:text-rose-200 border border-rose-200 dark:border-rose-800'
-                        }`}>
-                            <i data-lucide={toast.type === 'success' ? 'check-circle' : 'alert-circle'} className="w-5 h-5 shrink-0"></i>
-                            <div className="flex-1">{toast.text}</div>
-                            <button onClick={() => setToast(null)} className="opacity-70 hover:opacity-100">
-                                <i data-lucide="x" className="w-4 h-4"></i>
-                            </button>
+                        <div className={"p-4 rounded-2xl border text-xs font-bold flex items-center justify-between gap-3 " + (
+                            toast.type === 'success'
+                                ? "bg-[#e6f7f0] dark:bg-[#00a86b]/15 text-[#00a86b] border-[#00a86b]/30"
+                                : "bg-red-50 dark:bg-red-950/40 text-red-600 border-red-200 dark:border-red-900"
+                        )}>
+                            <div className="flex items-center gap-2">
+                                <Icon name={toast.type === 'success' ? 'check-circle' : 'alert-circle'} className="w-5 h-5 flex-shrink-0" />
+                                <span>{toast.text}</span>
+                            </div>
+                            <button onClick={() => setToast(null)} className="text-xs opacity-70 hover:opacity-100">✕</button>
                         </div>
                     )}
 
-                    {/* 1. UTMify Section */}
-                    <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-6 shadow-sm">
-                        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-100 dark:border-slate-800 pb-4 mb-5">
-                            <div className="flex items-center gap-3">
-                                <div className="w-10 h-10 rounded-xl bg-purple-50 dark:bg-purple-950/50 border border-purple-200 dark:border-purple-800 flex items-center justify-center text-purple-600 dark:text-purple-400 font-bold text-sm">
-                                    UTM
-                                </div>
-                                <div>
-                                    <h2 className="text-base font-bold text-slate-900 dark:text-white flex items-center gap-2">
-                                        Pixels e Códigos UTMify
-                                        <span className="text-xs px-2 py-0.5 rounded-full bg-purple-100 dark:bg-purple-950 text-purple-700 dark:text-purple-300 font-medium">
-                                            {pixels.utmify.length}
-                                        </span>
-                                    </h2>
-                                    <p className="text-xs text-slate-500 dark:text-slate-400">Insira os tokens ou scripts da UTMify para rastreio de vendas e origens.</p>
-                                </div>
+                    {/* 1. UTMify */}
+                    <div className="bg-white dark:bg-[#152132] rounded-[24px] p-6 border border-[#e2e9f0] dark:border-[#1e2d42] shadow-sm space-y-4">
+                        <div className="flex items-center justify-between border-b border-[#e2e9f0] dark:border-[#1e2d42] pb-3">
+                            <div className="flex items-center gap-2.5">
+                                <div className="w-7 h-7 rounded-lg bg-purple-500 text-white font-black text-xs flex items-center justify-center">U</div>
+                                <h3 className="text-sm font-extrabold text-[#132238] dark:text-white">Pixels e Códigos UTMify ({pixels.utmify.length})</h3>
                             </div>
                             <button
                                 type="button"
                                 onClick={addUtmify}
-                                className="inline-flex items-center gap-1.5 px-3.5 py-2 text-xs font-semibold rounded-lg bg-purple-50 dark:bg-purple-950/40 text-purple-700 dark:text-purple-300 hover:bg-purple-100 dark:hover:bg-purple-900/40 border border-purple-200 dark:border-purple-800 transition"
+                                className="px-3 py-1.5 rounded-lg bg-purple-50 dark:bg-purple-950/40 text-purple-600 dark:text-purple-300 font-bold text-xs hover:bg-purple-100 transition flex items-center gap-1.5"
                             >
-                                <i data-lucide="plus" className="w-3.5 h-3.5"></i>
+                                <Icon name="plus" className="w-3.5 h-3.5" />
                                 Adicionar UTMify
                             </button>
                         </div>
 
                         {pixels.utmify.length === 0 ? (
-                            <div className="text-center py-8 text-slate-400 text-xs border border-dashed border-slate-200 dark:border-slate-800 rounded-xl">
-                                Nenhum token ou código UTMify cadastrado. Clique no botão acima para adicionar.
-                            </div>
+                            <p className="text-xs text-[#718197] text-center py-4">Nenhum pixel UTMify cadastrado.</p>
                         ) : (
                             <div className="space-y-4">
                                 {pixels.utmify.map((utm, idx) => (
-                                    <div key={utm.id || idx} className="p-4 rounded-xl bg-slate-50 dark:bg-slate-800/40 border border-slate-200 dark:border-slate-800 space-y-3">
-                                        <div className="flex items-center justify-between border-b border-slate-200/60 dark:border-slate-700/60 pb-2">
-                                            <div className="flex items-center gap-2">
-                                                <span className="text-xs font-bold text-purple-600 dark:text-purple-400">#{idx + 1}</span>
-                                                <input
-                                                    type="text"
-                                                    value={utm.name}
-                                                    onChange={e => updateUtmify(idx, 'name', e.target.value)}
-                                                    placeholder="Nome do Pixel UTMify (Ex: Pixel UTMify Principal)"
-                                                    className="text-xs font-semibold bg-transparent border-none text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-0 p-0"
-                                                />
-                                            </div>
+                                    <div key={utm.id || idx} className="p-4 rounded-2xl bg-[#f8fafc] dark:bg-[#111c2d] border border-[#e2e9f0] dark:border-[#1e2d42] space-y-3">
+                                        <div className="flex items-center justify-between">
+                                            <span className="text-xs font-bold text-purple-600">UTMify #{idx + 1}</span>
                                             <div className="flex items-center gap-3">
-                                                <label className="flex items-center gap-2 cursor-pointer text-xs text-slate-600 dark:text-slate-300">
+                                                <label className="text-xs font-semibold flex items-center gap-1.5 cursor-pointer">
                                                     <input
                                                         type="checkbox"
                                                         checked={utm.active !== false}
-                                                        onChange={e => updateUtmify(idx, 'active', e.target.checked)}
+                                                        onChange={(e) => updateUtmify(idx, 'active', e.target.checked)}
                                                         className="w-4 h-4 rounded text-purple-600 focus:ring-purple-500"
                                                     />
                                                     Ativo
                                                 </label>
-                                                <button
-                                                    type="button"
-                                                    onClick={() => removeUtmify(idx)}
-                                                    className="p-1.5 text-slate-400 hover:text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/40 rounded-lg transition"
-                                                    title="Remover"
-                                                >
-                                                    <i data-lucide="trash-2" className="w-4 h-4"></i>
+                                                <button type="button" onClick={() => removeUtmify(idx)} className="text-red-500 hover:text-red-700">
+                                                    <Icon name="trash-2" className="w-4 h-4" />
                                                 </button>
                                             </div>
                                         </div>
-
                                         <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                                             <div>
-                                                <label className="block text-xs font-medium text-slate-700 dark:text-slate-300 mb-1">
-                                                    Token / ID do Pixel UTMify
-                                                </label>
+                                                <label className="block text-[11px] font-bold text-[#132238] dark:text-white uppercase mb-1">Token / ID</label>
                                                 <input
                                                     type="text"
                                                     value={utm.token}
-                                                    onChange={e => updateUtmify(idx, 'token', e.target.value)}
-                                                    placeholder="Ex: 6a963f062d87f621381c4a6b ou utm_live_..."
-                                                    className="w-full text-xs px-3 py-2 rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-900 dark:text-white font-mono focus:ring-2 focus:ring-purple-500 focus:outline-none"
+                                                    onChange={(e) => updateUtmify(idx, 'token', e.target.value)}
+                                                    placeholder="6a963f062d87f621381c4a6b"
+                                                    className="w-full px-3 py-2 rounded-xl border border-[#e2e9f0] dark:border-[#223247] bg-white dark:bg-[#0b131f] text-xs font-mono"
                                                 />
                                             </div>
                                             <div>
-                                                <label className="block text-xs font-medium text-slate-700 dark:text-slate-300 mb-1">
-                                                    Código / Script UTMify (HTML / JS)
-                                                </label>
+                                                <label className="block text-[11px] font-bold text-[#132238] dark:text-white uppercase mb-1">Código / Script do Pixel</label>
                                                 <input
                                                     type="text"
                                                     value={utm.scriptCode || ''}
-                                                    onChange={e => updateUtmify(idx, 'scriptCode', e.target.value)}
+                                                    onChange={(e) => updateUtmify(idx, 'scriptCode', e.target.value)}
                                                     placeholder="Cole o script ou código aqui..."
-                                                    className="w-full text-xs px-3 py-2 rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-900 dark:text-white font-mono focus:ring-2 focus:ring-purple-500 focus:outline-none"
+                                                    className="w-full px-3 py-2 rounded-xl border border-[#e2e9f0] dark:border-[#223247] bg-white dark:bg-[#0b131f] text-xs font-mono"
                                                 />
                                             </div>
                                         </div>
@@ -998,108 +885,75 @@
                         )}
                     </div>
 
-                    {/* 2. Facebook / Meta Section */}
-                    <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-6 shadow-sm">
-                        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-100 dark:border-slate-800 pb-4 mb-5">
-                            <div className="flex items-center gap-3">
-                                <div className="w-10 h-10 rounded-xl bg-blue-50 dark:bg-blue-950/50 border border-blue-200 dark:border-blue-800 flex items-center justify-center text-blue-600 dark:text-blue-400 font-bold text-sm">
-                                    <i data-lucide="share-2" className="w-5 h-5"></i>
-                                </div>
-                                <div>
-                                    <h2 className="text-base font-bold text-slate-900 dark:text-white flex items-center gap-2">
-                                        Pixels Facebook / Meta Ads
-                                        <span className="text-xs px-2 py-0.5 rounded-full bg-blue-100 dark:bg-blue-950 text-blue-700 dark:text-blue-300 font-medium">
-                                            {pixels.facebook.length}
-                                        </span>
-                                    </h2>
-                                    <p className="text-xs text-slate-500 dark:text-slate-400">Configure múltiplos pixels do Facebook com ID, Código de Conversão e Token CAPI.</p>
-                                </div>
+                    {/* 2. Facebook */}
+                    <div className="bg-white dark:bg-[#152132] rounded-[24px] p-6 border border-[#e2e9f0] dark:border-[#1e2d42] shadow-sm space-y-4">
+                        <div className="flex items-center justify-between border-b border-[#e2e9f0] dark:border-[#1e2d42] pb-3">
+                            <div className="flex items-center gap-2.5">
+                                <div className="w-7 h-7 rounded-lg bg-blue-600 text-white font-black text-xs flex items-center justify-center">f</div>
+                                <h3 className="text-sm font-extrabold text-[#132238] dark:text-white">Pixels Facebook / Meta Ads ({pixels.facebook.length})</h3>
                             </div>
                             <button
                                 type="button"
                                 onClick={addFacebook}
-                                className="inline-flex items-center gap-1.5 px-3.5 py-2 text-xs font-semibold rounded-lg bg-blue-50 dark:bg-blue-950/40 text-blue-700 dark:text-blue-300 hover:bg-blue-100 dark:hover:bg-blue-900/40 border border-blue-200 dark:border-blue-800 transition"
+                                className="px-3 py-1.5 rounded-lg bg-blue-50 dark:bg-blue-950/40 text-blue-600 dark:text-blue-300 font-bold text-xs hover:bg-blue-100 transition flex items-center gap-1.5"
                             >
-                                <i data-lucide="plus" className="w-3.5 h-3.5"></i>
+                                <Icon name="plus" className="w-3.5 h-3.5" />
                                 Adicionar Pixel Facebook
                             </button>
                         </div>
 
                         {pixels.facebook.length === 0 ? (
-                            <div className="text-center py-8 text-slate-400 text-xs border border-dashed border-slate-200 dark:border-slate-800 rounded-xl">
-                                Nenhum pixel do Facebook cadastrado. Clique no botão acima para adicionar.
-                            </div>
+                            <p className="text-xs text-[#718197] text-center py-4">Nenhum pixel do Facebook cadastrado.</p>
                         ) : (
                             <div className="space-y-4">
                                 {pixels.facebook.map((fb, idx) => (
-                                    <div key={fb.id || idx} className="p-4 rounded-xl bg-slate-50 dark:bg-slate-800/40 border border-slate-200 dark:border-slate-800 space-y-3">
-                                        <div className="flex items-center justify-between border-b border-slate-200/60 dark:border-slate-700/60 pb-2">
-                                            <div className="flex items-center gap-2">
-                                                <span className="text-xs font-bold text-blue-600 dark:text-blue-400">#{idx + 1}</span>
-                                                <input
-                                                    type="text"
-                                                    value={fb.name}
-                                                    onChange={e => updateFacebook(idx, 'name', e.target.value)}
-                                                    placeholder="Nome do Pixel (Ex: Pixel Meta Principal)"
-                                                    className="text-xs font-semibold bg-transparent border-none text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-0 p-0"
-                                                />
-                                            </div>
+                                    <div key={fb.id || idx} className="p-4 rounded-2xl bg-[#f8fafc] dark:bg-[#111c2d] border border-[#e2e9f0] dark:border-[#1e2d42] space-y-3">
+                                        <div className="flex items-center justify-between">
+                                            <span className="text-xs font-bold text-blue-600">Facebook Pixel #{idx + 1}</span>
                                             <div className="flex items-center gap-3">
-                                                <label className="flex items-center gap-2 cursor-pointer text-xs text-slate-600 dark:text-slate-300">
+                                                <label className="text-xs font-semibold flex items-center gap-1.5 cursor-pointer">
                                                     <input
                                                         type="checkbox"
                                                         checked={fb.active !== false}
-                                                        onChange={e => updateFacebook(idx, 'active', e.target.checked)}
+                                                        onChange={(e) => updateFacebook(idx, 'active', e.target.checked)}
                                                         className="w-4 h-4 rounded text-blue-600 focus:ring-blue-500"
                                                     />
                                                     Ativo
                                                 </label>
-                                                <button
-                                                    type="button"
-                                                    onClick={() => removeFacebook(idx)}
-                                                    className="p-1.5 text-slate-400 hover:text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/40 rounded-lg transition"
-                                                    title="Remover"
-                                                >
-                                                    <i data-lucide="trash-2" className="w-4 h-4"></i>
+                                                <button type="button" onClick={() => removeFacebook(idx)} className="text-red-500 hover:text-red-700">
+                                                    <Icon name="trash-2" className="w-4 h-4" />
                                                 </button>
                                             </div>
                                         </div>
-
                                         <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
                                             <div>
-                                                <label className="block text-xs font-medium text-slate-700 dark:text-slate-300 mb-1">
-                                                    ID do Pixel Facebook *
-                                                </label>
+                                                <label className="block text-[11px] font-bold text-[#132238] dark:text-white uppercase mb-1">ID do Pixel *</label>
                                                 <input
                                                     type="text"
                                                     value={fb.pixelId}
-                                                    onChange={e => updateFacebook(idx, 'pixelId', e.target.value)}
-                                                    placeholder="Ex: 1392443726166280"
-                                                    className="w-full text-xs px-3 py-2 rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-900 dark:text-white font-mono focus:ring-2 focus:ring-blue-500 focus:outline-none"
+                                                    onChange={(e) => updateFacebook(idx, 'pixelId', e.target.value)}
+                                                    placeholder="1392443726166280"
+                                                    className="w-full px-3 py-2 rounded-xl border border-[#e2e9f0] dark:border-[#223247] bg-white dark:bg-[#0b131f] text-xs font-mono"
                                                 />
                                             </div>
                                             <div>
-                                                <label className="block text-xs font-medium text-slate-700 dark:text-slate-300 mb-1">
-                                                    Código / Script do Evento
-                                                </label>
+                                                <label className="block text-[11px] font-bold text-[#132238] dark:text-white uppercase mb-1">Código do Evento</label>
                                                 <input
                                                     type="text"
-                                                    value={fb.code}
-                                                    onChange={e => updateFacebook(idx, 'code', e.target.value)}
-                                                    placeholder="Ex: fbq('track', 'PageView');"
-                                                    className="w-full text-xs px-3 py-2 rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-900 dark:text-white font-mono focus:ring-2 focus:ring-blue-500 focus:outline-none"
+                                                    value={fb.code || ''}
+                                                    onChange={(e) => updateFacebook(idx, 'code', e.target.value)}
+                                                    placeholder="fbq('track', 'PageView');"
+                                                    className="w-full px-3 py-2 rounded-xl border border-[#e2e9f0] dark:border-[#223247] bg-white dark:bg-[#0b131f] text-xs font-mono"
                                                 />
                                             </div>
                                             <div>
-                                                <label className="block text-xs font-medium text-slate-700 dark:text-slate-300 mb-1">
-                                                    Token de Acesso / API de Conversões (CAPI)
-                                                </label>
+                                                <label className="block text-[11px] font-bold text-[#132238] dark:text-white uppercase mb-1">Token CAPI (API)</label>
                                                 <input
                                                     type="text"
-                                                    value={fb.token}
-                                                    onChange={e => updateFacebook(idx, 'token', e.target.value)}
-                                                    placeholder="Ex: EAAWeSsA6RKs..."
-                                                    className="w-full text-xs px-3 py-2 rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-900 dark:text-white font-mono focus:ring-2 focus:ring-blue-500 focus:outline-none"
+                                                    value={fb.token || ''}
+                                                    onChange={(e) => updateFacebook(idx, 'token', e.target.value)}
+                                                    placeholder="EAAWeSsA6RKs..."
+                                                    className="w-full px-3 py-2 rounded-xl border border-[#e2e9f0] dark:border-[#223247] bg-white dark:bg-[#0b131f] text-xs font-mono"
                                                 />
                                             </div>
                                         </div>
@@ -1109,108 +963,75 @@
                         )}
                     </div>
 
-                    {/* 3. TikTok Ads Section */}
-                    <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-6 shadow-sm">
-                        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-100 dark:border-slate-800 pb-4 mb-5">
-                            <div className="flex items-center gap-3">
-                                <div className="w-10 h-10 rounded-xl bg-cyan-50 dark:bg-cyan-950/50 border border-cyan-200 dark:border-cyan-800 flex items-center justify-center text-cyan-600 dark:text-cyan-400 font-bold text-sm">
-                                    <i data-lucide="video" className="w-5 h-5"></i>
-                                </div>
-                                <div>
-                                    <h2 className="text-base font-bold text-slate-900 dark:text-white flex items-center gap-2">
-                                        Pixels TikTok Ads
-                                        <span className="text-xs px-2 py-0.5 rounded-full bg-cyan-100 dark:bg-cyan-950 text-cyan-700 dark:text-cyan-300 font-medium">
-                                            {pixels.tiktok.length}
-                                        </span>
-                                    </h2>
-                                    <p className="text-xs text-slate-500 dark:text-slate-400">Configure múltiplos pixels do TikTok com ID, Código de Evento e Token de API.</p>
-                                </div>
+                    {/* 3. TikTok */}
+                    <div className="bg-white dark:bg-[#152132] rounded-[24px] p-6 border border-[#e2e9f0] dark:border-[#1e2d42] shadow-sm space-y-4">
+                        <div className="flex items-center justify-between border-b border-[#e2e9f0] dark:border-[#1e2d42] pb-3">
+                            <div className="flex items-center gap-2.5">
+                                <div className="w-7 h-7 rounded-lg bg-black text-white font-black text-xs flex items-center justify-center">T</div>
+                                <h3 className="text-sm font-extrabold text-[#132238] dark:text-white">Pixels TikTok Ads ({pixels.tiktok.length})</h3>
                             </div>
                             <button
                                 type="button"
                                 onClick={addTikTok}
-                                className="inline-flex items-center gap-1.5 px-3.5 py-2 text-xs font-semibold rounded-lg bg-cyan-50 dark:bg-cyan-950/40 text-cyan-700 dark:text-cyan-300 hover:bg-cyan-100 dark:hover:bg-cyan-900/40 border border-cyan-200 dark:border-cyan-800 transition"
+                                className="px-3 py-1.5 rounded-lg bg-cyan-50 dark:bg-cyan-950/40 text-cyan-600 dark:text-cyan-300 font-bold text-xs hover:bg-cyan-100 transition flex items-center gap-1.5"
                             >
-                                <i data-lucide="plus" className="w-3.5 h-3.5"></i>
+                                <Icon name="plus" className="w-3.5 h-3.5" />
                                 Adicionar Pixel TikTok
                             </button>
                         </div>
 
                         {pixels.tiktok.length === 0 ? (
-                            <div className="text-center py-8 text-slate-400 text-xs border border-dashed border-slate-200 dark:border-slate-800 rounded-xl">
-                                Nenhum pixel do TikTok cadastrado. Clique no botão acima para adicionar.
-                            </div>
+                            <p className="text-xs text-[#718197] text-center py-4">Nenhum pixel do TikTok cadastrado.</p>
                         ) : (
                             <div className="space-y-4">
                                 {pixels.tiktok.map((tt, idx) => (
-                                    <div key={tt.id || idx} className="p-4 rounded-xl bg-slate-50 dark:bg-slate-800/40 border border-slate-200 dark:border-slate-800 space-y-3">
-                                        <div className="flex items-center justify-between border-b border-slate-200/60 dark:border-slate-700/60 pb-2">
-                                            <div className="flex items-center gap-2">
-                                                <span className="text-xs font-bold text-cyan-600 dark:text-cyan-400">#{idx + 1}</span>
-                                                <input
-                                                    type="text"
-                                                    value={tt.name}
-                                                    onChange={e => updateTikTok(idx, 'name', e.target.value)}
-                                                    placeholder="Nome do Pixel (Ex: Pixel TikTok Principal)"
-                                                    className="text-xs font-semibold bg-transparent border-none text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-0 p-0"
-                                                />
-                                            </div>
+                                    <div key={tt.id || idx} className="p-4 rounded-2xl bg-[#f8fafc] dark:bg-[#111c2d] border border-[#e2e9f0] dark:border-[#1e2d42] space-y-3">
+                                        <div className="flex items-center justify-between">
+                                            <span className="text-xs font-bold text-cyan-600">TikTok Pixel #{idx + 1}</span>
                                             <div className="flex items-center gap-3">
-                                                <label className="flex items-center gap-2 cursor-pointer text-xs text-slate-600 dark:text-slate-300">
+                                                <label className="text-xs font-semibold flex items-center gap-1.5 cursor-pointer">
                                                     <input
                                                         type="checkbox"
                                                         checked={tt.active !== false}
-                                                        onChange={e => updateTikTok(idx, 'active', e.target.checked)}
+                                                        onChange={(e) => updateTikTok(idx, 'active', e.target.checked)}
                                                         className="w-4 h-4 rounded text-cyan-600 focus:ring-cyan-500"
                                                     />
                                                     Ativo
                                                 </label>
-                                                <button
-                                                    type="button"
-                                                    onClick={() => removeTikTok(idx)}
-                                                    className="p-1.5 text-slate-400 hover:text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/40 rounded-lg transition"
-                                                    title="Remover"
-                                                >
-                                                    <i data-lucide="trash-2" className="w-4 h-4"></i>
+                                                <button type="button" onClick={() => removeTikTok(idx)} className="text-red-500 hover:text-red-700">
+                                                    <Icon name="trash-2" className="w-4 h-4" />
                                                 </button>
                                             </div>
                                         </div>
-
                                         <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
                                             <div>
-                                                <label className="block text-xs font-medium text-slate-700 dark:text-slate-300 mb-1">
-                                                    ID do Pixel TikTok *
-                                                </label>
+                                                <label className="block text-[11px] font-bold text-[#132238] dark:text-white uppercase mb-1">ID do Pixel *</label>
                                                 <input
                                                     type="text"
                                                     value={tt.pixelId}
-                                                    onChange={e => updateTikTok(idx, 'pixelId', e.target.value)}
-                                                    placeholder="Ex: DA9IHQBC77UBPDTVJ18G"
-                                                    className="w-full text-xs px-3 py-2 rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-900 dark:text-white font-mono focus:ring-2 focus:ring-cyan-500 focus:outline-none"
+                                                    onChange={(e) => updateTikTok(idx, 'pixelId', e.target.value)}
+                                                    placeholder="DA9IHQBC77UBPDTVJ18G"
+                                                    className="w-full px-3 py-2 rounded-xl border border-[#e2e9f0] dark:border-[#223247] bg-white dark:bg-[#0b131f] text-xs font-mono"
                                                 />
                                             </div>
                                             <div>
-                                                <label className="block text-xs font-medium text-slate-700 dark:text-slate-300 mb-1">
-                                                    Código / Script do Evento
-                                                </label>
+                                                <label className="block text-[11px] font-bold text-[#132238] dark:text-white uppercase mb-1">Código do Evento</label>
                                                 <input
                                                     type="text"
-                                                    value={tt.code}
-                                                    onChange={e => updateTikTok(idx, 'code', e.target.value)}
-                                                    placeholder="Ex: ttq.track('CompletePayment');"
-                                                    className="w-full text-xs px-3 py-2 rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-900 dark:text-white font-mono focus:ring-2 focus:ring-cyan-500 focus:outline-none"
+                                                    value={tt.code || ''}
+                                                    onChange={(e) => updateTikTok(idx, 'code', e.target.value)}
+                                                    placeholder="ttq.track('CompletePayment');"
+                                                    className="w-full px-3 py-2 rounded-xl border border-[#e2e9f0] dark:border-[#223247] bg-white dark:bg-[#0b131f] text-xs font-mono"
                                                 />
                                             </div>
                                             <div>
-                                                <label className="block text-xs font-medium text-slate-700 dark:text-slate-300 mb-1">
-                                                    Token de Acesso / API de Eventos
-                                                </label>
+                                                <label className="block text-[11px] font-bold text-[#132238] dark:text-white uppercase mb-1">Token de API</label>
                                                 <input
                                                     type="text"
-                                                    value={tt.token}
-                                                    onChange={e => updateTikTok(idx, 'token', e.target.value)}
-                                                    placeholder="Ex: tt_token_..."
-                                                    className="w-full text-xs px-3 py-2 rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-900 dark:text-white font-mono focus:ring-2 focus:ring-cyan-500 focus:outline-none"
+                                                    value={tt.token || ''}
+                                                    onChange={(e) => updateTikTok(idx, 'token', e.target.value)}
+                                                    placeholder="tt_token_..."
+                                                    className="w-full px-3 py-2 rounded-xl border border-[#e2e9f0] dark:border-[#223247] bg-white dark:bg-[#0b131f] text-xs font-mono"
                                                 />
                                             </div>
                                         </div>
@@ -1220,186 +1041,197 @@
                         )}
                     </div>
 
-                    {/* Bottom Save Bar */}
-                    <div className="sticky bottom-4 z-20 p-4 rounded-2xl bg-white/90 dark:bg-slate-900/90 backdrop-blur-md border border-slate-200 dark:border-slate-800 shadow-xl flex flex-col sm:flex-row items-center justify-between gap-4">
-                        <div className="text-xs text-slate-500 dark:text-slate-400">
-                            Ao clicar em salvar, todos os pixels ativos serão atualizados e aplicados imediatamente em <strong>todas as páginas do site</strong>.
-                        </div>
+                    {/* SAVE BUTTON */}
+                    <div className="sticky bottom-4 z-20 p-4 rounded-2xl bg-white/90 dark:bg-[#152132]/90 backdrop-blur-md border border-[#e2e9f0] dark:border-[#1e2d42] shadow-xl flex items-center justify-between gap-4">
+                        <span className="text-xs text-[#718197] dark:text-[#94a3b8]">Disparos automáticos ativos em todas as páginas.</span>
                         <button
                             type="button"
                             onClick={handleSave}
                             disabled={saving}
-                            className="w-full sm:w-auto px-8 py-3 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-sm shadow-lg shadow-emerald-600/30 transition flex items-center justify-center gap-2 shrink-0 disabled:opacity-50"
+                            className="px-8 py-3 rounded-xl bg-[#00a86b] hover:bg-[#00915c] text-white font-bold text-xs shadow-md transition-all flex items-center gap-2 disabled:opacity-50"
                         >
-                            {saving ? (
-                                <>
-                                    <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
-                                    Salvando alterações...
-                                </>
-                            ) : (
-                                <>
-                                    <i data-lucide="check" className="w-4 h-4"></i>
-                                    Salvar todos os pixels
-                                </>
-                            )}
+                            {saving ? 'Salvando...' : 'Salvar todos os pixels'}
                         </button>
                     </div>
                 </div>
             );
         }
 
-
-
         // --- 4. ORDERS VIEW ---
         function OrdersView() {
             const [orders, setOrders] = useState([]);
             const [metrics, setMetrics] = useState(null);
+            const [filterStatus, setFilterStatus] = useState('ALL');
+            const [searchQuery, setSearchQuery] = useState('');
             const [loading, setLoading] = useState(true);
-            const [search, setSearch] = useState('');
-            const [status, setStatus] = useState('ALL');
-            const [selectedOrder, setSelectedOrder] = useState(null);
 
             const loadData = () => {
                 const token = localStorage.getItem('recupera_admin_token');
-                setLoading(true);
                 Promise.all([
-                    fetch(`/api/admin/orders?status=${status}&search=${encodeURIComponent(search)}`, { headers: { 'Authorization': `Bearer ${token}` } }).then(r => r.json()),
-                    fetch('/api/admin/metrics', { headers: { 'Authorization': `Bearer ${token}` } }).then(r => r.json())
+                    fetch('/api/admin/metrics', { headers: { 'Authorization': 'Bearer ' + token } }).then(r => r.json()),
+                    fetch('/api/admin/orders?status=' + filterStatus + '&search=' + encodeURIComponent(searchQuery), { headers: { 'Authorization': 'Bearer ' + token } }).then(r => r.json())
                 ])
-                .then(([ordRes, metRes]) => {
-                    if (ordRes.success) setOrders(ordRes.orders);
+                .then(([metRes, ordRes]) => {
                     if (metRes.success) setMetrics(metRes.cards);
+                    if (ordRes.success) setOrders(ordRes.orders || []);
                 })
                 .finally(() => setLoading(false));
             };
 
-            useEffect(() => { loadData(); }, [status]);
+            useEffect(() => { loadData(); }, [filterStatus]);
+
+            const handleSearchSubmit = (e) => {
+                e.preventDefault();
+                loadData();
+            };
+
+            const markPaid = async (orderId) => {
+                const token = localStorage.getItem('recupera_admin_token');
+                await fetch('/api/admin/orders/' + orderId + '/status', {
+                    method: 'PATCH',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': 'Bearer ' + token
+                    },
+                    body: JSON.stringify({ status: 'PAID' })
+                });
+                loadData();
+            };
+
+            if (loading && !metrics) {
+                return (
+                    <div className="py-20 flex justify-center">
+                        <div className="w-8 h-8 border-4 border-[#00a86b] border-t-transparent rounded-full animate-spin"></div>
+                    </div>
+                );
+            }
 
             return (
                 <div className="space-y-6">
-                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-                        <p className="text-xs text-[#718197] dark:text-[#94a3b8]">
-                            Pedidos persistidos dos gateways ativos com atualização automática.
-                        </p>
-                        <button
-                            onClick={loadData}
-                            className="px-3.5 py-1.5 rounded-xl border border-[#e2e9f0] dark:border-[#1e2d42] bg-white dark:bg-[#152132] text-xs font-bold text-[#132238] dark:text-white flex items-center gap-1.5 shadow-xs"
-                        >
-                            <Icon name="refresh-cw" className={`w-3.5 h-3.5 ${loading ? 'animate-spin-fast' : ''}`} />
-                            <span>Atualizar</span>
-                        </button>
+                    <div>
+                        <span className="text-[10px] font-bold text-[#00a86b] uppercase tracking-wider">ACOMPANHAMENTO AO VIVO</span>
+                        <h2 className="text-xl font-bold text-[#132238] dark:text-white mt-0.5">Pedidos e Vendas</h2>
                     </div>
 
-                    {/* TOP 4 METRIC CARDS */}
-                    <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-                        <div className="p-4 rounded-[14px] bg-white dark:bg-[#152132] border border-[#e2e9f0] dark:border-[#1e2d42] flex items-center justify-between shadow-xs">
-                            <div>
-                                <span className="text-[11px] font-bold text-[#718197] dark:text-[#94a3b8] block">Pedidos totais</span>
-                                <span className="text-2xl font-black text-[#132238] dark:text-white block mt-0.5">{metrics?.totalOrders || 0}</span>
-                                <span className="text-[10px] text-[#718197]">Todo o histórico salvo</span>
-                            </div>
-                            <div className="p-2.5 rounded-xl bg-[#e6f7f0] dark:bg-[#00a86b]/20 text-[#00a86b]">
-                                <Icon name="clipboard" className="w-5 h-5" />
-                            </div>
+                    {/* METRIC CARDS */}
+                    <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                        <div className="p-4 rounded-2xl bg-white dark:bg-[#152132] border border-[#e2e9f0] dark:border-[#1e2d42]">
+                            <span className="text-[11px] font-bold text-[#718197] uppercase">TOTAL DE PEDIDOS</span>
+                            <div className="text-2xl font-extrabold text-[#132238] dark:text-white mt-1">{metrics?.totalOrders || 0}</div>
                         </div>
-
-                        <div className="p-4 rounded-[14px] bg-white dark:bg-[#152132] border border-[#e2e9f0] dark:border-[#1e2d42] flex items-center justify-between shadow-xs">
-                            <div>
-                                <span className="text-[11px] font-bold text-[#718197] dark:text-[#94a3b8] block">Aguardando PIX</span>
-                                <span className="text-2xl font-black text-[#132238] dark:text-white block mt-0.5">{metrics?.pendingOrders || 0}</span>
-                                <span className="text-[10px] text-[#718197]">1º na pendência</span>
-                            </div>
-                            <div className="p-2.5 rounded-xl bg-amber-50 dark:bg-amber-950/40 text-amber-500">
-                                <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
-                            </div>
+                        <div className="p-4 rounded-2xl bg-white dark:bg-[#152132] border border-[#e2e9f0] dark:border-[#1e2d42]">
+                            <span className="text-[11px] font-bold text-amber-600 uppercase">AGUARDANDO PIX</span>
+                            <div className="text-2xl font-extrabold text-amber-600 mt-1">{metrics?.pendingOrders || 0}</div>
                         </div>
-
-                        <div className="p-4 rounded-[14px] bg-white dark:bg-[#152132] border border-[#e2e9f0] dark:border-[#1e2d42] flex items-center justify-between shadow-xs">
-                            <div>
-                                <span className="text-[11px] font-bold text-[#718197] dark:text-[#94a3b8] block">Pagamentos aprovados</span>
-                                <span className="text-2xl font-black text-[#132238] dark:text-white block mt-0.5">{metrics?.paidOrders || 0}</span>
-                                <span className="text-[10px] text-[#718197]">R$ {Number(metrics?.approvedRevenue || 0).toFixed(2)}</span>
-                            </div>
-                            <div className="p-2.5 rounded-xl bg-blue-50 dark:bg-blue-950/40 text-[#0091ea]">
-                                <Icon name="check-circle" className="w-5 h-5" />
-                            </div>
+                        <div className="p-4 rounded-2xl bg-white dark:bg-[#152132] border border-[#e2e9f0] dark:border-[#1e2d42]">
+                            <span className="text-[11px] font-bold text-[#00a86b] uppercase">PAGOS</span>
+                            <div className="text-2xl font-extrabold text-[#00a86b] mt-1">{metrics?.paidOrders || 0}</div>
                         </div>
-
-                        <div className="p-4 rounded-[14px] bg-white dark:bg-[#152132] border border-[#e2e9f0] dark:border-[#1e2d42] flex items-center justify-between shadow-xs">
-                            <div>
-                                <span className="text-[11px] font-bold text-[#718197] dark:text-[#94a3b8] block">PIX copiado</span>
-                                <span className="text-2xl font-black text-[#132238] dark:text-white block mt-0.5">0</span>
-                                <span className="text-[10px] text-[#718197]">Intenção registrada</span>
-                            </div>
-                            <div className="p-2.5 rounded-xl bg-purple-50 dark:bg-purple-950/40 text-purple-500">
-                                <Icon name="copy" className="w-5 h-5" />
+                        <div className="p-4 rounded-2xl bg-white dark:bg-[#152132] border border-[#e2e9f0] dark:border-[#1e2d42]">
+                            <span className="text-[11px] font-bold text-[#00a86b] uppercase">RECEITA APROVADA</span>
+                            <div className="text-2xl font-extrabold text-[#00a86b] mt-1">
+                                R$ {(metrics?.approvedRevenue || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                             </div>
                         </div>
                     </div>
 
-                    {/* SEARCH AND FILTER BAR */}
-                    <div className="bg-white dark:bg-[#152132] rounded-[14px] border border-[#e2e9f0] dark:border-[#1e2d42] p-3 flex flex-col sm:flex-row items-center justify-between gap-3 shadow-xs">
-                        <form onSubmit={(e) => { e.preventDefault(); loadData(); }} className="relative w-full sm:w-96">
-                            <Icon name="search" className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-[#718197]" />
+                    {/* FILTERS & SEARCH */}
+                    <div className="flex flex-col sm:flex-row items-center justify-between gap-3 bg-white dark:bg-[#152132] p-4 rounded-2xl border border-[#e2e9f0] dark:border-[#1e2d42]">
+                        <form onSubmit={handleSearchSubmit} className="w-full sm:w-auto flex-1 max-w-md relative">
                             <input
                                 type="text"
-                                value={search}
-                                onChange={(e) => setSearch(e.target.value)}
-                                placeholder="Buscar por nome, e-mail ou transação"
-                                className="w-full pl-9 pr-3 py-2 rounded-lg border border-[#e2e9f0] dark:border-[#223247] bg-[#f8fafc] dark:bg-[#0b131f] text-xs text-[#132238] dark:text-white"
+                                value={searchQuery}
+                                onChange={(e) => setSearchQuery(e.target.value)}
+                                placeholder="Buscar por nome, CPF ou ID..."
+                                className="w-full pl-9 pr-4 py-2 rounded-xl border border-[#e2e9f0] dark:border-[#223247] bg-[#f8fafc] dark:bg-[#0b131f] text-xs"
                             />
+                            <Icon name="search" className="w-4 h-4 text-[#718197] absolute left-3 top-2.5" />
                         </form>
 
-                        <select
-                            value={status}
-                            onChange={(e) => setStatus(e.target.value)}
-                            className="w-full sm:w-auto text-xs font-semibold px-3 py-2 rounded-lg border border-[#e2e9f0] dark:border-[#223247] bg-white dark:bg-[#0b131f] text-[#132238] dark:text-white"
-                        >
-                            <option value="ALL">Todos os status</option>
-                            <option value="PENDING">Aguardando PIX</option>
-                            <option value="PAID">Pago</option>
-                            <option value="FAILED">Falhou</option>
-                        </select>
+                        <div className="flex items-center gap-2 w-full sm:w-auto">
+                            {['ALL', 'PENDING', 'PAID'].map(st => (
+                                <button
+                                    key={st}
+                                    type="button"
+                                    onClick={() => setFilterStatus(st)}
+                                    className={"px-3 py-1.5 rounded-xl text-xs font-bold transition " + (
+                                        filterStatus === st
+                                            ? "bg-[#00a86b] text-white"
+                                            : "bg-[#f8fafc] dark:bg-[#111c2d] text-[#718197] hover:bg-[#e2e9f0]"
+                                    )}
+                                >
+                                    {st === 'ALL' ? 'Todos' : st === 'PENDING' ? 'Aguardando' : 'Aprovados'}
+                                </button>
+                            ))}
+                            <button onClick={loadData} className="p-2 rounded-xl border border-[#e2e9f0] dark:border-[#223247] text-[#718197] hover:text-[#00a86b]">
+                                <Icon name="refresh-cw" className="w-4 h-4" />
+                            </button>
+                        </div>
                     </div>
 
-                    {/* TABLE */}
-                    <div className="bg-white dark:bg-[#152132] rounded-[14px] border border-[#e2e9f0] dark:border-[#1e2d42] shadow-xs overflow-hidden">
+                    {/* ORDERS TABLE */}
+                    <div className="bg-white dark:bg-[#152132] rounded-[24px] border border-[#e2e9f0] dark:border-[#1e2d42] overflow-hidden shadow-sm">
                         <div className="overflow-x-auto custom-scroll">
-                            <table className="w-full text-left text-xs border-collapse">
-                                <thead>
-                                    <tr className="border-b border-[#e2e9f0] dark:border-[#1e2d42] text-[#718197] dark:text-[#94a3b8] font-bold text-[10px] uppercase tracking-wider">
-                                        <th className="py-3 px-4">PEDIDO</th>
-                                        <th className="py-3 px-4">CLIENTE</th>
-                                        <th className="py-3 px-4">VALOR / CHAVE</th>
-                                        <th className="py-3 px-4">STATUS</th>
-                                        <th className="py-3 px-4">DADOS</th>
+                            <table className="w-full text-left text-xs">
+                                <thead className="bg-[#f8fafc] dark:bg-[#111c2d] border-b border-[#e2e9f0] dark:border-[#1e2d42] text-[#718197] uppercase text-[10px] font-bold">
+                                    <tr>
+                                        <th className="py-3.5 px-4">Data/Hora</th>
+                                        <th className="py-3.5 px-4">Cliente</th>
+                                        <th className="py-3.5 px-4">CPF / Contato</th>
+                                        <th className="py-3.5 px-4">Gateway</th>
+                                        <th className="py-3.5 px-4">Valor</th>
+                                        <th className="py-3.5 px-4">Status</th>
+                                        <th className="py-3.5 px-4 text-right">Ações</th>
                                     </tr>
                                 </thead>
                                 <tbody className="divide-y divide-[#e2e9f0] dark:divide-[#1e2d42]">
-                                    {orders.map(o => (
-                                        <tr key={o.id} onClick={() => setSelectedOrder(o)} className="hover:bg-[#f8fafc] dark:hover:bg-[#0b131f]/50 cursor-pointer">
-                                            <td className="py-3 px-4 font-mono font-bold text-[#132238] dark:text-white">{o.id}</td>
-                                            <td className="py-3 px-4 font-semibold text-[#132238] dark:text-white">{o.clientName}<br/><span className="text-[10px] text-[#718197] font-normal">{o.email}</span></td>
-                                            <td className="py-3 px-4 font-bold text-[#132238] dark:text-white">R$ {Number(o.amount).toFixed(2)}<br/><span className="text-[10px] text-[#718197] font-normal">{o.gateway}</span></td>
-                                            <td className="py-3 px-4">
-                                                <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full uppercase ${
-                                                    o.status === 'PAID' ? 'bg-[#e6f7f0] dark:bg-[#00a86b]/20 text-[#00a86b]' : 'bg-amber-50 dark:bg-amber-950/40 text-amber-500'
-                                                }`}>
-                                                    {o.status === 'PAID' ? 'Pago' : 'Pendente'}
-                                                </span>
-                                            </td>
-                                            <td className="py-3 px-4 text-[#718197]">{new Date(o.createdAt).toLocaleString('pt-BR', { dateStyle: 'short', timeStyle: 'short' })}</td>
-                                        </tr>
-                                    ))}
-
-                                    {orders.length === 0 && (
+                                    {orders.length === 0 ? (
                                         <tr>
-                                            <td colSpan="5" className="py-16 text-center text-[#718197]">
-                                                <Icon name="clipboard" className="w-8 h-8 mx-auto text-[#cbd5e1] dark:text-[#334155] mb-2" />
-                                                <p className="font-bold text-xs">Nenhum pedido encontrado</p>
-                                                <p className="text-[11px]">Os pedidos gerados no checkout aparecerão aqui.</p>
+                                            <td colSpan="7" className="text-center py-10 text-[#718197]">
+                                                Nenhum pedido encontrado.
                                             </td>
                                         </tr>
+                                    ) : (
+                                        orders.map(o => (
+                                            <tr key={o.id} className="hover:bg-[#f8fafc] dark:hover:bg-[#111c2d]/50 transition">
+                                                <td className="py-3 px-4 font-mono text-[11px] text-[#718197]">
+                                                    {new Date(o.createdAt).toLocaleString('pt-BR')}
+                                                </td>
+                                                <td className="py-3 px-4 font-bold text-[#132238] dark:text-white">
+                                                    {o.clientName || 'Beneficiário'}
+                                                </td>
+                                                <td className="py-3 px-4 text-[#718197] font-mono">
+                                                    {o.cpfMasked || '***.***.***-**'}
+                                                </td>
+                                                <td className="py-3 px-4">
+                                                    <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-slate-100 dark:bg-slate-800 text-[#132238] dark:text-slate-200">
+                                                        {o.gateway}
+                                                    </span>
+                                                </td>
+                                                <td className="py-3 px-4 font-bold text-[#132238] dark:text-white">
+                                                    R$ {Number(o.amount).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                                                </td>
+                                                <td className="py-3 px-4">
+                                                    <span className={"px-2.5 py-1 rounded-full text-[10px] font-extrabold " + (
+                                                        o.status === 'PAID'
+                                                            ? "bg-emerald-100 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300"
+                                                            : "bg-amber-100 dark:bg-amber-950/60 text-amber-700 dark:text-amber-300"
+                                                    )}>
+                                                        {o.status === 'PAID' ? 'PAGO' : 'AGUARDANDO'}
+                                                    </span>
+                                                </td>
+                                                <td className="py-3 px-4 text-right">
+                                                    {o.status !== 'PAID' && (
+                                                        <button
+                                                            onClick={() => markPaid(o.id)}
+                                                            className="px-2.5 py-1 rounded-lg bg-[#00a86b] text-white text-[10px] font-bold hover:bg-[#00915c] transition"
+                                                        >
+                                                            Aprovar
+                                                        </button>
+                                                    )}
+                                                </td>
+                                            </tr>
+                                        ))
                                     )}
                                 </tbody>
                             </table>
@@ -1409,178 +1241,75 @@
             );
         }
 
-        // --- 5. RETENTION VIEW ---
+        // --- 5. RETENTION & FUNNEL VIEW ---
         function RetentionView() {
-            const [metrics, setMetrics] = useState(null);
+            const [retentionData, setRetentionData] = useState(null);
             const [loading, setLoading] = useState(true);
 
             useEffect(() => {
                 const token = localStorage.getItem('recupera_admin_token');
-                fetch('/api/admin/metrics', { headers: { 'Authorization': `Bearer ${token}` } })
+                fetch('/api/admin/metrics', {
+                    headers: { 'Authorization': 'Bearer ' + token }
+                })
                 .then(r => r.json())
-                .then(data => { if (data.success) setMetrics(data); })
+                .then(data => {
+                    if (data.success && data.retention) {
+                        setRetentionData(data.retention);
+                    }
+                })
                 .finally(() => setLoading(false));
             }, []);
 
-            if (loading || !metrics) {
+            if (loading || !retentionData) {
                 return (
                     <div className="py-20 flex justify-center">
-                        <div className="w-8 h-8 border-3 border-[#00a86b]/20 border-t-[#00a86b] rounded-full animate-spin-fast"></div>
+                        <div className="w-8 h-8 border-4 border-[#00a86b] border-t-transparent rounded-full animate-spin"></div>
                     </div>
                 );
             }
 
-            const rData = metrics.retention;
-            const f1 = rData.funnel[0] || { sessions: 0, rate: '100%' };
-            const f2 = rData.funnel[1] || { sessions: 0, rate: '0%' };
-            const f3 = rData.funnel[2] || { sessions: 0, rate: '0%' };
-
-            const overallPct = parseFloat(rData.overallPercentage) || 0;
-            const strokeDash = `${Math.min(100, Math.max(0, overallPct))}, 100`;
-
-            const widthF1 = f1.sessions > 0 ? '100%' : '0%';
-            const widthF2 = f1.sessions > 0 ? Math.min(100, (f2.sessions / f1.sessions) * 100) + '%' : '0%';
-            const widthF3 = f1.sessions > 0 ? Math.min(100, (f3.sessions / f1.sessions) * 100) + '%' : '0%';
-
             return (
                 <div className="space-y-6">
-                    <p className="text-xs text-[#718197] dark:text-[#94a3b8]">
-                        Retenção real entre Consulta, Identidade e Recebimento nos últimos 30 dias.
-                    </p>
+                    <div>
+                        <span className="text-[10px] font-bold text-[#00a86b] uppercase tracking-wider">MÉTRICAS DO FUNIL</span>
+                        <h2 className="text-xl font-bold text-[#132238] dark:text-white mt-0.5">Retenção e Conversão</h2>
+                    </div>
 
-                    {/* HERO BLUE DARK CARD */}
-                    <div className="bg-[#1b3b5a] text-white rounded-[20px] p-6 sm:p-8 flex flex-col md:flex-row items-start md:items-center justify-between gap-6 shadow-md">
-                        <div className="space-y-2">
-                            <div className="w-9 h-9 rounded-xl bg-white/10 flex items-center justify-center">
-                                <Icon name="users" className="w-5 h-5 text-white" />
-                            </div>
-                            <span className="text-[11px] font-extrabold uppercase tracking-widest text-[#cbd5e1] block pt-1">SESSÕES NA CONSULTA</span>
-                            <div className="text-4xl sm:text-5xl font-black tracking-tight">{f1.sessions}</div>
-                            <span className="text-xs text-[#cbd5e1] font-medium block">pessoas que iniciaram o funil</span>
+                    {/* HERO DONUT CARD */}
+                    <div className="bg-[#132238] text-white rounded-[24px] p-6 sm:p-8 flex flex-col md:flex-row items-center justify-between gap-6 shadow-xl">
+                        <div className="space-y-2 text-center md:text-left">
+                            <span className="text-[11px] font-bold text-[#00a86b] uppercase tracking-wider">TAXA GLOBAL DE CONVERSÃO</span>
+                            <div className="text-4xl sm:text-5xl font-black">{retentionData.overallPercentage}%</div>
+                            <p className="text-xs text-[#94a3b8] max-w-sm">Percentual de visitantes da pre-lander que chegam à etapa final de quitação.</p>
                         </div>
-
-                        {/* CIRCULAR GAUGE */}
-                        <div className="flex items-center gap-4 bg-white/5 px-6 py-4 rounded-2xl border border-white/10">
-                            <div className="relative w-20 h-20 flex items-center justify-center">
-                                <svg className="w-20 h-20 transform -rotate-90" viewBox="0 0 36 36">
-                                    <path className="text-white/15" strokeWidth="3.5" stroke="currentColor" fill="none" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" />
-                                    <path className="text-[#00a86b]" strokeDasharray={strokeDash} strokeWidth="3.5" strokeLinecap="round" stroke="currentColor" fill="none" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" />
-                                </svg>
-                                <div className="absolute flex flex-col items-center justify-center text-center">
-                                    <span className="text-base font-black text-white leading-none">{overallPct}%</span>
-                                    <span className="text-[8px] text-[#cbd5e1] mt-0.5 leading-none">À média de<br/>Recebimento</span>
-                                </div>
-                            </div>
+                        <div className="w-32 h-32 relative flex items-center justify-center">
+                            <svg className="w-full h-full transform -rotate-90" viewBox="0 0 36 36">
+                                <path className="text-slate-800" strokeWidth="3.8" stroke="currentColor" fill="none" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" />
+                                <path className="text-[#00a86b]" strokeDasharray={(Number(retentionData.overallPercentage) || 0) + ", 100"} strokeWidth="3.8" strokeLinecap="round" stroke="currentColor" fill="none" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" />
+                            </svg>
+                            <span className="absolute text-sm font-extrabold">{retentionData.overallPercentage}%</span>
                         </div>
                     </div>
 
-                    {/* 3 FUNNEL CARDS */}
+                    {/* FUNNEL STAGES */}
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                        {/* 01 Consulta */}
-                        <div className="p-5 rounded-[16px] bg-white dark:bg-[#152132] border border-[#e2e9f0] dark:border-[#1e2d42] shadow-xs flex flex-col justify-between space-y-3">
-                            <div>
+                        {retentionData.funnel.map((st, i) => (
+                            <div key={st.stage} className="p-6 rounded-[24px] bg-white dark:bg-[#152132] border border-[#e2e9f0] dark:border-[#1e2d42] space-y-2">
                                 <div className="flex items-center justify-between">
-                                    <span className="text-xs font-extrabold text-[#00a86b]">01</span>
-                                    <span className="text-2xl font-black text-[#132238] dark:text-white">{f1.sessions}</span>
+                                    <span className="text-xs font-bold text-[#718197] uppercase">ETAPA 0{i + 1}</span>
+                                    <span className="text-xs font-black text-[#00a86b]">{st.rate}</span>
                                 </div>
-                                <h4 className="text-xs font-bold text-[#132238] dark:text-white mt-1">Consulta</h4>
-                                <span className="text-[11px] text-[#718197]">Entrada do funil</span>
+                                <h3 className="text-base font-extrabold text-[#132238] dark:text-white">{st.stage}</h3>
+                                <p className="text-xs text-[#718197] dark:text-[#94a3b8]">{st.description}</p>
+                                <div className="text-2xl font-black text-[#132238] dark:text-white pt-2">{st.sessions}</div>
                             </div>
-                            <div className="space-y-1 pt-2">
-                                <div className="w-full h-1.5 bg-[#e2e9f0] dark:bg-[#223247] rounded-full overflow-hidden">
-                                    <div className="h-full bg-[#00a86b] rounded-full" style={{ width: widthF1 }}></div>
-                                </div>
-                                <span className="text-[10px] text-[#718197] block">{f1.sessions > 0 ? '100% base' : '0% base'}</span>
-                            </div>
-                        </div>
-
-                        {/* 02 Identidade */}
-                        <div className="p-5 rounded-[16px] bg-white dark:bg-[#152132] border border-[#e2e9f0] dark:border-[#1e2d42] shadow-xs flex flex-col justify-between space-y-3">
-                            <div>
-                                <div className="flex items-center justify-between">
-                                    <span className="text-xs font-extrabold text-amber-500">02</span>
-                                    <span className="text-2xl font-black text-[#132238] dark:text-white">{f2.sessions}</span>
-                                </div>
-                                <h4 className="text-xs font-bold text-[#132238] dark:text-white mt-1">Identidade</h4>
-                                <span className="text-[11px] text-[#718197]">Dados consultados e identidade exibida</span>
-                            </div>
-                            <div className="space-y-1 pt-2">
-                                <div className="w-full h-1.5 bg-[#e2e9f0] dark:bg-[#223247] rounded-full overflow-hidden">
-                                    <div className="h-full bg-amber-400 rounded-full" style={{ width: widthF2 }}></div>
-                                </div>
-                                <span className="text-[10px] text-[#718197] block">
-                                    {f1.sessions > 0 
-                                        ? `${((f2.sessions/f1.sessions)*100).toFixed(0)}% retidos desde a Consulta` 
-                                        : '0% retidos'}
-                                </span>
-                            </div>
-                        </div>
-
-                        {/* 03 Recebimento */}
-                        <div className="p-5 rounded-[16px] bg-white dark:bg-[#152132] border border-[#e2e9f0] dark:border-[#1e2d42] shadow-xs flex flex-col justify-between space-y-3">
-                            <div>
-                                <div className="flex items-center justify-between">
-                                    <span className="text-xs font-extrabold text-[#0091ea]">03</span>
-                                    <span className="text-2xl font-black text-[#132238] dark:text-white">{f3.sessions}</span>
-                                </div>
-                                <h4 className="text-xs font-bold text-[#132238] dark:text-white mt-1">Recebimento</h4>
-                                <span className="text-[11px] text-[#718197]">Etapa de PIX e Upsell</span>
-                            </div>
-                            <div className="space-y-1 pt-2">
-                                <div className="w-full h-1.5 bg-[#e2e9f0] dark:bg-[#223247] rounded-full overflow-hidden">
-                                    <div className="h-full bg-[#0091ea] rounded-full" style={{ width: widthF3 }}></div>
-                                </div>
-                                <span className="text-[10px] text-[#718197] block">
-                                    {f1.sessions > 0 
-                                        ? `${((f3.sessions/f1.sessions)*100).toFixed(0)}% retidos desde a Consulta` 
-                                        : '0% retidos'}
-                                </span>
-                            </div>
-                        </div>
-                    </div>
-
-                    {/* COMO LER NOTICE */}
-                    <div className="p-4 rounded-[14px] bg-amber-50/70 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-900/30 flex items-start gap-2.5">
-                        <Icon name="alert-circle" className="w-4 h-4 text-amber-500 flex-shrink-0 mt-0.5" />
-                        <div className="text-xs text-[#132238] dark:text-[#cbd5e1]">
-                            <strong className="block font-bold mb-0.5">Como ler:</strong>
-                            <span>De {f1.sessions} sessões que consultaram valores, {f2.sessions} chegaram à Identidade e {f3.sessions} abriram o Recebimento.</span>
-                        </div>
-                    </div>
-
-                    {/* CONVERSÃO EM ÂMBAR SECTION */}
-                    <div className="p-6 rounded-[16px] bg-white dark:bg-[#152132] border border-[#e2e9f0] dark:border-[#1e2d42] shadow-xs space-y-4">
-                        <div className="flex items-center justify-between pb-3 border-b border-[#e2e9f0] dark:border-[#1e2d42]">
-                            <div>
-                                <h3 className="text-sm font-bold text-[#132238] dark:text-white">Conversão em âmbar</h3>
-                                <p className="text-[11px] text-[#718197] dark:text-[#94a3b8]">Contexto complementar dos pedidos PIX já criados</p>
-                            </div>
-                            <Icon name="credit-card" className="w-4 h-4 text-[#00a86b]" />
-                        </div>
-
-                        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                            <div className="p-4 rounded-xl bg-[#f8fafc] dark:bg-[#0b131f] border border-[#e2e9f0] dark:border-[#223247]">
-                                <span className="text-[11px] text-[#718197] block">Pedidos criados</span>
-                                <span className="text-2xl font-black text-[#132238] dark:text-white block mt-1">{metrics.cards?.totalOrders || 0}</span>
-                            </div>
-
-                            <div className="p-4 rounded-xl bg-[#f8fafc] dark:bg-[#0b131f] border border-[#e2e9f0] dark:border-[#223247]">
-                                <span className="text-[11px] text-[#718197] block">PIX copiado</span>
-                                <span className="text-2xl font-black text-[#132238] dark:text-white block mt-1">0</span>
-                                <span className="text-[10px] text-[#718197]">0 % dos pedidos</span>
-                            </div>
-
-                            <div className="p-4 rounded-xl bg-[#f8fafc] dark:bg-[#0b131f] border border-[#e2e9f0] dark:border-[#223247]">
-                                <span className="text-[11px] text-[#718197] block">Confirmados</span>
-                                <span className="text-2xl font-black text-[#00a86b] block mt-1">{metrics.cards?.paidOrders || 0}</span>
-                                <span className="text-[10px] text-[#718197]">Pagamentos aprovados</span>
-                            </div>
-                        </div>
+                        ))}
                     </div>
                 </div>
             );
         }
 
+        // Render React Application
         ReactDOM.createRoot(document.getElementById('root')).render(<App />);
     </script>
 </body>
