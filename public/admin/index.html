@@ -454,6 +454,7 @@
             const [editPublic, setEditPublic] = useState('');
             const [editLimit, setEditLimit] = useState('100000');
             const [loading, setLoading] = useState(true);
+            const [saving, setSaving] = useState(false);
             const [testing, setTesting] = useState(false);
             const [testResult, setTestResult] = useState(null);
 
@@ -489,20 +490,59 @@
 
             const requiresPublicKey = currentGw ? (currentGw.requiresPublicKey === true || currentGw.key === 'freepay') : false;
 
-            const handleSaveOrTest = async () => {
-                if (testing) return;
+            // Direct Save and Activate (Without requiring test PIX)
+            const handleDirectSave = async (activate = false) => {
+                if (saving || testing) return;
+                setSaving(true);
+                setTestResult(null);
+
+                const token = localStorage.getItem('recupera_admin_token');
+                try {
+                    const res = await fetch('/api/admin/gateway-config', {
+                        method: 'PUT',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'Authorization': 'Bearer ' + token
+                        },
+                        body: JSON.stringify({
+                            gatewayKey: selectedGwKey,
+                            secretKey: editSecret,
+                            publicKey: editPublic,
+                            maxAmountCents: Number(editLimit),
+                            setActive: activate
+                        })
+                    });
+
+                    const data = await res.json();
+                    if (data.success) {
+                        setTestResult({
+                            type: 'success',
+                            text: data.message || 'Configurações salvas com sucesso!'
+                        });
+                        loadConfig();
+                    } else {
+                        setTestResult({
+                            type: 'error',
+                            text: data.error || 'Falha ao salvar gateway.'
+                        });
+                    }
+                } catch(e) {
+                    setTestResult({ type: 'error', text: 'Erro de comunicação ao salvar.' });
+                } finally {
+                    setSaving(false);
+                }
+            };
+
+            // Test PIX (R$ 1,00) and Activate
+            const handleTestAndActivate = async () => {
+                if (testing || saving) return;
                 setTesting(true);
                 setTestResult(null);
 
                 const token = localStorage.getItem('recupera_admin_token');
-                const isSwitch = selectedGwKey !== config?.activeGatewayKey;
-
                 try {
-                    const endpoint = isSwitch ? '/api/admin/gateway-test' : '/api/admin/gateway-config';
-                    const method = isSwitch ? 'POST' : 'PUT';
-
-                    const res = await fetch(endpoint, {
-                        method: method,
+                    const res = await fetch('/api/admin/gateway-test', {
+                        method: 'POST',
                         headers: {
                             'Content-Type': 'application/json',
                             'Authorization': 'Bearer ' + token
@@ -519,13 +559,13 @@
                     if (data.success) {
                         setTestResult({
                             type: 'success',
-                            text: data.test ? data.test.message : (data.message || 'Configurações salvas!')
+                            text: data.test ? data.test.message : (data.message || 'Teste aprovado e gateway ativado!')
                         });
                         loadConfig();
                     } else {
                         setTestResult({
                             type: 'error',
-                            text: data.error || 'Falha ao salvar gateway.'
+                            text: data.error || 'Falha no teste da adquirente.'
                         });
                     }
                 } catch(e) {
@@ -543,13 +583,15 @@
                 );
             }
 
+            const isActiveInProd = config.activeGatewayKey === selectedGwKey;
+
             return (
                 <div className="space-y-6">
                     <div>
                         <span className="text-[10px] font-bold text-[#00a86b] uppercase tracking-wider">GATEWAY EM PRODUÇÃO</span>
                         <h2 className="text-xl font-bold text-[#132238] dark:text-white mt-0.5">Portais de Pagamento</h2>
                         <p className="text-xs text-[#718197] dark:text-[#94a3b8] mt-1">
-                            Selecione a adquirente ativa para emissão do PIX. Alterne com segurança testando com cobrança de R$ 1,00.
+                            Selecione a adquirente ativa para emissão do PIX. Você pode salvar e ativar diretamente ou realizar um teste com cobrança de R$ 1,00.
                         </p>
                     </div>
 
@@ -574,7 +616,7 @@
                             <div className="space-y-3">
                                 {config.gateways.map(gw => {
                                     const isSelected = selectedGwKey === gw.key;
-                                    const isActiveInProd = config.activeGatewayKey === gw.key;
+                                    const isProd = config.activeGatewayKey === gw.key;
                                     const needsPub = gw.requiresPublicKey === true || gw.key === 'freepay';
 
                                     return (
@@ -590,7 +632,7 @@
                                             <div className="flex items-center justify-between mb-1.5">
                                                 <div className="flex items-center gap-2">
                                                     <span className="font-extrabold text-sm text-[#132238] dark:text-white">{gw.name}</span>
-                                                    {isActiveInProd && (
+                                                    {isProd && (
                                                         <span className="px-2 py-0.5 rounded-full text-[10px] font-extrabold bg-[#00a86b] text-white">
                                                             EM PRODUÇÃO
                                                         </span>
@@ -619,7 +661,16 @@
                         {/* RIGHT: CREDENTIALS EDITOR */}
                         <div className="lg:col-span-7 bg-white dark:bg-[#152132] rounded-[24px] p-6 sm:p-8 border border-[#e2e9f0] dark:border-[#1e2d42] shadow-sm space-y-5">
                             <div className="border-b border-[#e2e9f0] dark:border-[#1e2d42] pb-4">
-                                <span className="text-[10px] font-bold text-[#00a86b] uppercase tracking-wider">CREDENCIAS DA ADQUIRENTE</span>
+                                <div className="flex items-center justify-between">
+                                    <span className="text-[10px] font-bold text-[#00a86b] uppercase tracking-wider">CREDENCIAS DA ADQUIRENTE</span>
+                                    {isActiveInProd ? (
+                                        <span className="text-[10px] font-extrabold px-2.5 py-0.5 rounded-full bg-emerald-100 dark:bg-emerald-950 text-emerald-700 dark:text-emerald-300">
+                                            ATUALMENTE ATIVO
+                                        </span>
+                                    ) : (
+                                        <span className="text-[10px] font-bold text-slate-400">INATIVO</span>
+                                    )}
+                                </div>
                                 <h3 className="text-lg font-bold text-[#132238] dark:text-white mt-0.5">Configurar {currentGw?.name}</h3>
                                 <p className="text-xs text-[#718197] dark:text-[#94a3b8] mt-0.5">
                                     {selectedGwKey === 'pingupag'
@@ -665,22 +716,43 @@
                                 )}
                             </div>
 
-                            <div className="pt-2">
+                            {/* DUAL ACTION BUTTONS: SAVE & ACTIVATE DIRECTLY OR TEST */}
+                            <div className="pt-2 flex flex-col sm:flex-row items-center gap-3">
                                 <button
                                     type="button"
-                                    onClick={handleSaveOrTest}
-                                    disabled={testing}
-                                    className="w-full py-3.5 rounded-xl bg-[#00a86b] hover:bg-[#00915c] text-white font-bold text-xs shadow-md transition-all flex items-center justify-center gap-2 disabled:opacity-50"
+                                    onClick={() => handleDirectSave(true)}
+                                    disabled={saving || testing}
+                                    className="w-full sm:flex-1 py-3.5 rounded-xl bg-[#00a86b] hover:bg-[#00915c] text-white font-bold text-xs shadow-md transition-all flex items-center justify-center gap-2 disabled:opacity-50"
                                 >
-                                    {testing ? (
+                                    {saving ? (
                                         <>
                                             <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
-                                            Processando teste de PIX...
+                                            Salvando...
                                         </>
                                     ) : (
                                         <>
                                             <Icon name="check" className="w-4 h-4" />
-                                            {selectedGwKey === config.activeGatewayKey ? 'Salvar credenciais' : ('Testar PIX (R$ 1,00) e Ativar ' + (currentGw ? currentGw.name : ''))}
+                                            {isActiveInProd ? 'Salvar Credenciais' : ('Salvar e Ativar ' + (currentGw ? currentGw.name : ''))}
+                                        </>
+                                    )}
+                                </button>
+
+                                <button
+                                    type="button"
+                                    onClick={handleTestAndActivate}
+                                    disabled={testing || saving}
+                                    className="w-full sm:w-auto px-5 py-3.5 rounded-xl border border-[#e2e9f0] dark:border-[#223247] bg-[#f8fafc] dark:bg-[#111c2d] text-[#132238] dark:text-white hover:border-[#00a86b] font-bold text-xs transition-all flex items-center justify-center gap-2 disabled:opacity-50"
+                                    title="Gera cobrança PIX real de R$ 1,00 para teste de conectividade"
+                                >
+                                    {testing ? (
+                                        <>
+                                            <div className="w-4 h-4 border-2 border-[#00a86b] border-t-transparent rounded-full animate-spin"></div>
+                                            Testando...
+                                        </>
+                                    ) : (
+                                        <>
+                                            <Icon name="activity" className="w-4 h-4 text-[#00a86b]" />
+                                            Testar PIX (R$ 1,00)
                                         </>
                                     )}
                                 </button>
