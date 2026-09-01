@@ -432,6 +432,15 @@ const handler = async (req, res) => {
       const orderId = pathname.replace('/api/admin/orders/', '').replace('/status', '');
       const body = await readJsonBody();
       adminService.updateOrderStatus(orderId, body.status || 'PAID');
+      const orderObj = adminService.getOrderById(orderId)?.order;
+      if (orderObj) {
+        adminService.sendUtmifyOrderWebhook({
+          orderId: orderObj.transactionId || orderObj.id,
+          status: (body.status === 'PAID' ? 'paid' : (body.status === 'REFUNDED' ? 'refunded' : 'waiting_payment')),
+          amount: orderObj.amount,
+          customer: { name: orderObj.clientName, email: orderObj.email, document: orderObj.cpf, phone: orderObj.phone }
+        }).catch(() => {});
+      }
       res.writeHead(200, { 'Content-Type': 'application/json' });
       res.end(JSON.stringify({ success: true, message: 'Status atualizado com sucesso.' }));
       return;
@@ -446,6 +455,46 @@ const handler = async (req, res) => {
     }
 
     // 8. Metrics & Retention
+    // 9. Utmify API Token & Test
+    if (pathname === '/api/admin/utmify-token' && method === 'GET') {
+      res.writeHead(200, { 'Content-Type': 'application/json' });
+      res.end(JSON.stringify({ success: true, token: adminService.getUtmifyApiToken() }));
+      return;
+    }
+
+    if (pathname === '/api/admin/utmify-token' && method === 'POST') {
+      const body = await readJsonBody();
+      const result = adminService.updateUtmifyApiToken(body.token);
+      res.writeHead(200, { 'Content-Type': 'application/json' });
+      res.end(JSON.stringify(result));
+      return;
+    }
+
+    if (pathname === '/api/admin/utmify/test' && method === 'POST') {
+      const body = await readJsonBody();
+      if (body.token) adminService.updateUtmifyApiToken(body.token);
+      const testRes = await adminService.sendUtmifyOrderWebhook({
+        orderId: 'TEST_ADM_' + Date.now(),
+        status: body.status || 'paid',
+        amount: 68.92,
+        customer: {
+          name: 'Teste Painel Admin',
+          email: 'teste@cliente.com',
+          document: '08072703188',
+          phone: '11999999999'
+        },
+        tracking: { utm_source: 'admin_test' },
+        isTest: true
+      });
+      res.writeHead(200, { 'Content-Type': 'application/json' });
+      res.end(JSON.stringify({
+        success: testRes.success,
+        data: testRes.data,
+        message: testRes.success ? 'Webhook disparado e validado com sucesso pela Utmify (HTTP 200)!' : (testRes.error || 'Falha ao validar com a Utmify')
+      }));
+      return;
+    }
+
     if (pathname === '/api/admin/metrics' && method === 'GET') {
       res.writeHead(200, { 'Content-Type': 'application/json' });
       res.end(JSON.stringify(adminService.getMetrics()));
@@ -555,6 +604,29 @@ async function fetchCpfData(rawCpf) {
       itemTitle: 'ebook liberado'
     });
 
+    // Envia Webhook de Venda Pendente para Utmify
+    adminService.sendUtmifyOrderWebhook({
+      orderId: result.transactionId,
+      status: 'waiting_payment',
+      amount: amount,
+      customer: {
+        name: clientData.nome,
+        email: clientData.email,
+        document: clientData.cpf,
+        phone: clientData.telefone || clientData.phone,
+        ip: req.socket?.remoteAddress || '127.0.0.1'
+      },
+      tracking: {
+        utm_source: clientData.utm_source,
+        utm_medium: clientData.utm_medium,
+        utm_campaign: clientData.utm_campaign,
+        utm_content: clientData.utm_content,
+        utm_term: clientData.utm_term,
+        src: clientData.src,
+        sck: clientData.sck
+      }
+    }).catch(() => {});
+
     res.writeHead(200, { 'Content-Type': 'application/json' });
     res.end(JSON.stringify({
       success: true,
@@ -602,6 +674,29 @@ async function fetchCpfData(rawCpf) {
       pixCode: result.pixCode,
       itemTitle: 'ebook liberado'
     });
+
+    // Envia Webhook de Venda Pendente do Upsell 1 para Utmify
+    adminService.sendUtmifyOrderWebhook({
+      orderId: result.transactionId,
+      status: 'waiting_payment',
+      amount: amount,
+      customer: {
+        name: clientData.nome,
+        email: clientData.email,
+        document: clientData.cpf,
+        phone: clientData.telefone || clientData.phone,
+        ip: req.socket?.remoteAddress || '127.0.0.1'
+      },
+      tracking: {
+        utm_source: clientData.utm_source,
+        utm_medium: clientData.utm_medium,
+        utm_campaign: clientData.utm_campaign,
+        utm_content: clientData.utm_content,
+        utm_term: clientData.utm_term,
+        src: clientData.src,
+        sck: clientData.sck
+      }
+    }).catch(() => {});
 
     res.writeHead(200, { 'Content-Type': 'application/json' });
     res.end(JSON.stringify({

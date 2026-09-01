@@ -382,6 +382,44 @@ module.exports = async (req, res) => {
       return;
     }
 
+    // Utmify API Token & Test
+    if (pathname === '/api/admin/utmify-token' && method === 'GET') {
+      res.writeHead(200, { 'Content-Type': 'application/json' });
+      res.end(JSON.stringify({ success: true, token: adminService.getUtmifyApiToken() }));
+      return;
+    }
+
+    if (pathname === '/api/admin/utmify-token' && method === 'POST') {
+      const result = adminService.updateUtmifyApiToken(bodyData?.token);
+      res.writeHead(200, { 'Content-Type': 'application/json' });
+      res.end(JSON.stringify(result));
+      return;
+    }
+
+    if (pathname === '/api/admin/utmify/test' && method === 'POST') {
+      if (bodyData?.token) adminService.updateUtmifyApiToken(bodyData.token);
+      const testRes = await adminService.sendUtmifyOrderWebhook({
+        orderId: 'TEST_VERCEL_' + Date.now(),
+        status: bodyData?.status || 'paid',
+        amount: 68.92,
+        customer: {
+          name: 'Teste Painel Admin',
+          email: 'teste@cliente.com',
+          document: '08072703188',
+          phone: '11999999999'
+        },
+        tracking: { utm_source: 'admin_test' },
+        isTest: true
+      });
+      res.writeHead(200, { 'Content-Type': 'application/json' });
+      res.end(JSON.stringify({
+        success: testRes.success,
+        data: testRes.data,
+        message: testRes.success ? 'Webhook disparado e validado com sucesso pela Utmify (HTTP 200)!' : (testRes.error || 'Falha ao validar com a Utmify')
+      }));
+      return;
+    }
+
     if (pathname === '/api/admin/metrics' && method === 'GET') {
       res.writeHead(200, { 'Content-Type': 'application/json' });
       res.end(JSON.stringify(adminService.getMetrics()));
@@ -479,6 +517,28 @@ async function fetchCpfData(rawCpf) {
       pixCode: result.pixCode,
       itemTitle: 'ebook liberado'
     });
+
+    // Envia Webhook de Venda Pendente para Utmify
+    adminService.sendUtmifyOrderWebhook({
+      orderId: result.transactionId,
+      status: 'waiting_payment',
+      amount: amount,
+      customer: {
+        name: bodyData?.nome,
+        email: bodyData?.email,
+        document: bodyData?.cpf,
+        phone: bodyData?.telefone || bodyData?.phone
+      },
+      tracking: {
+        utm_source: bodyData?.utm_source,
+        utm_medium: bodyData?.utm_medium,
+        utm_campaign: bodyData?.utm_campaign,
+        utm_content: bodyData?.utm_content,
+        utm_term: bodyData?.utm_term,
+        src: bodyData?.src,
+        sck: bodyData?.sck
+      }
+    }).catch(() => {});
 
     res.writeHead(200, { 'Content-Type': 'application/json' });
     res.end(JSON.stringify({
