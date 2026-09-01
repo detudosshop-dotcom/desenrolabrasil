@@ -763,8 +763,8 @@
     </div>
     <div class="bubble-row" id="bubble1" style="display:none">
         <img class="bubble-avatar" src="/static/images/atendente-avatar.png" alt="">
-        <div class="bubble">
-            Olá <strong>Lucas Machado Gaona</strong>, esse é um canal oficial de atendimento do <strong>Desenrola Brasil</strong> e os seus dados estão seguros conosco. 🔒
+        <div class="bubble" id="welcomeMsgBubble">
+            Olá <strong id="welcomeNome">Beneficiário(a)</strong>, esse é um canal oficial de atendimento do <strong>Desenrola Brasil</strong> e os seus dados estão seguros conosco. 🔒
         </div>
     </div>
 
@@ -875,14 +875,34 @@
     }));
 
     function updateClientElements() {
+        if (!NOME) return;
+        const primeiroNome = NOME.trim().split(' ')[0].toUpperCase();
+        const nomeFormatado = NOME.trim();
+
+        // 1. Header user chip (e.g. JANETE, LUCAS)
         const userChip = document.querySelector('.user-chip');
-        if (userChip && NOME) {
-            userChip.innerHTML = `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg> ${NOME.split(' ')[0]}`;
+        if (userChip) {
+            userChip.innerHTML = `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="margin-right:4px; vertical-align:text-bottom;"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg> ${primeiroNome}`;
         }
+
+        // 2. First greeting bubble message in chat
+        const welcomeNome = document.getElementById('welcomeNome');
+        if (welcomeNome) {
+            welcomeNome.textContent = nomeFormatado;
+        }
+        const bubble1 = document.getElementById('bubble1');
+        if (bubble1) {
+            const bDiv = bubble1.querySelector('.bubble');
+            if (bDiv) {
+                bDiv.innerHTML = `Olá <strong>${nomeFormatado}</strong>, esse é um canal oficial de atendimento do <strong>Desenrola Brasil</strong> e os seus dados estão seguros conosco. 🔒`;
+            }
+        }
+
+        // 3. Confirmation card fields
         const cNome = document.getElementById('confirmNome');
         const cCpf = document.getElementById('confirmCpf');
         const cNasc = document.getElementById('confirmNasc');
-        if (cNome) cNome.textContent = NOME;
+        if (cNome) cNome.textContent = nomeFormatado;
         if (cCpf) cCpf.textContent = CPF_FORMATTED;
         if (cNasc) cNasc.textContent = NASCIMENTO;
     }
@@ -912,6 +932,7 @@
     }
 
     document.addEventListener('DOMContentLoaded', updateClientElements);
+    updateClientElements();
 
     // ── Global Audio Unlocking System ──
     let userInteracted = false;
